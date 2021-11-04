@@ -1,4 +1,7 @@
 # Patrus
+
+![Patrus](res/patrus2.jpg)
+
 A punt on Colin's favorite book ["Crafting Interpreters"](https://craftinginterpreters.com/contents.html) but in Haskell
 
 ## Notes
@@ -11,3 +14,17 @@ Hécate — Today at 1:29 AM
 and Diehl I think made  some stuff in Megaparsec in his tutorials
 but do start with Alex/Happy
 ```
+
+## Deps
+
+Alex & Happy
+
+```
+$ cabal install alex happy
+```
+
+Lexer largely modeled off of this [tut](https://github.com/cse130-sp18/arith/blob/master/src/Language/Arith/Lexer.x).
+
+## TODOS
+
+First pass on "A Tree-walk interpreter" in Literal Haskell Style w/ Alex/Happy to see the presentation flow.

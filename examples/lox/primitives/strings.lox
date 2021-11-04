@@ -1,0 +1,3 @@
+"I am a string";
+"";    // The empty string.
+"123"; // This is a string, not a number.

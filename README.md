@@ -27,4 +27,4 @@ Lexer largely modeled off of this [tut](https://github.com/cse130-sp18/arith/blo
 
 ## TODOS
 
-First pass on "A Tree-walk interpreter" in Literal Haskell Style w/ Alex/Happy to see the presentation flow.
+First pass on "A Tree-walk interpreter" in Literal Haskell Style w/ Alex/Happy to see the presentation flow. See Patrus.lhs for notes as I go along.

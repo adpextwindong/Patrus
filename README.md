@@ -27,4 +27,6 @@ Lexer largely modeled off of this [tut](https://github.com/cse130-sp18/arith/blo
 
 ## TODOS
 
-First pass on "A Tree-walk interpreter" in Literal Haskell Style w/ Alex/Happy to see the presentation flow. See Patrus.lhs for notes as I go along.
+First pass on "A Tree-walk interpreter" in Literal Haskell Style w/ Alex/Happy to see the presentation flow. See [Patrus.lhs](Patrus.lhs) for notes as I go along.
+
+Git submodule a fork of just [the Lox tests](https://github.com/munificent/craftinginterpreters/tree/master/test).

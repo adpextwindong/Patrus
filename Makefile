@@ -1,5 +1,5 @@
 clean:
-	rm src/Patrus/Lexer.hs
+	rm src/Patrus/Lexer.hs docs/Patrus.html
 
 Lexer:
 	alex src/Patrus/Lexer.x

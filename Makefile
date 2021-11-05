@@ -1,10 +1,10 @@
 clean:
-	rm src/Patrus/Lexer.hs docs/Patrus.html
+	rm src/Patrus/Lexer.hs docs/*.html
 
-Lexer:
+lexer:
 	alex src/Patrus/Lexer.x
 
-Literate:
-	pandoc -s Patrus.lhs -o docs/Patrus.html
+literate:
+	pandoc -s LoxLanguageNotes.md -o docs/LoxLanguageNotes.html
 
-all: Lexer
+all: lexer literate

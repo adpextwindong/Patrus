@@ -2,6 +2,17 @@
 
 Having tests for these too would be nice. See [examples\lox](examples\lox).
 
+## Lox Summary
+
+- Imperative
+- Dynamic Typing (No implicit conversion)
+- Closures
+- First Class Functions
+- Lexical Scope
+- Single inheritance OOP, Class Constructors Inherited
+
+## Feature List
+
 - [ ] Primitives
     - [ ] Booleans
     - [ ] Double-Precision Floats
@@ -27,7 +38,7 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
         - [ ] Or
         - [ ] Not
         - [ ] Short Circuiting
-    - [ ] Precendence and Grouping --TODO elaborate
+    - [ ] Precendence and Grouping
 - [ ] Statements
     - [ ] Statement Blocks
     - [ ] Variable Declaration
@@ -39,7 +50,19 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
         - [ ] C-style forloop
     - [ ] Function Declaration
         - [ ] Nil as default return value if return ommited.
+    - [ ] Class Declaration
+    - [ ] Class Instance Creation Statement
 - [ ] Functions
-    - [ ] FunCall
-    - [ ] First Class
+    - [ ] Function Call
+    - [ ] First Class Functions
 - [ ] Closures
+- [ ] Classes
+    - [ ] Class Methods & Fields
+    - [ ] `this` keyword
+    - [ ] Class Constructor
+    - [ ] Single Inheritance
+        - [ ] Superclass Methods
+        - [ ] Class Constructor Inheritance aka `super` keyword
+- [ ] "Standard Library"
+    - [ ] Built-in `print`
+    - [ ] Clock Function for benchmarking

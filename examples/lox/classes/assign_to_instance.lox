@@ -1,0 +1,4 @@
+// These fields do not exist on the class.
+// Therefore these non-existing fields will be created on the instance.
+breakfast.meat = "sausage";
+breakfast.bread = "sourdough";

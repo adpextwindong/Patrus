@@ -1,0 +1,5 @@
+// Store the class in variables.
+var someVariable = Breakfast;
+
+// Pass it to functions.
+someFunction(Breakfast);

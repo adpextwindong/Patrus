@@ -1,0 +1,2 @@
+var benedict = Brunch("ham", "English muffin");
+benedict.serve("Noble Reader");

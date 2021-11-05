@@ -1,0 +1,8 @@
+print "Hello, world!";
+
+"some expression";
+
+{
+  print "One statement.";
+  print "Two statements.";
+}

@@ -133,7 +133,133 @@ No bitwise, shift, modulo, or conditional operators in base lox language.
 var average = (min + max) / 2;
 ```
 
+3.5 Statements
 
+"An expression followed by a semicolon (;) promotes the expression to statement-hood."
+
+"Baking print into the language instead of just making it a core library function is a hack. But it’s a useful hack for us: it means our in-progress interpreter can start producing output before we’ve implemented all of the machinery required to define functions, look them up by name, and call them."
+
+```lox
+print "Hello, world!";
+
+"some expression";
+
+{
+  print "One statement.";
+  print "Two statements.";
+}
+```
+
+3.6 Variables
+
+NOTE: "If you omit the initializer, the variable’s value defaults to nil."
+
+Rationale: "This is one of those cases where not having nil and forcing every variable to be initialized to some value would be more annoying than dealing with nil itself."
+
+"[variable scope rules] works like you would expect coming from C or Java."
+
+```lox
+var imAVariable = "here is my value";
+var iAmNil;
+
+var breakfast = "bagels";
+print breakfast; // "bagels".
+breakfast = "beignets";
+print breakfast; // "beignets".
+```
+
+3.7 Control Flow
+
+Note: "do while" ommited.
+
+```lox
+if (condition) {
+  print "yes";
+} else {
+  print "no";
+}
+
+var a = 1;
+while (a < 10) {
+  print a;
+  a = a + 1;
+}
+
+for (var a = 1; a < 10; a = a + 1) {
+  print a;
+}
+```
+
+3.8 Functions
+
+C style funcall syntax.
+
+NOTE: "If execution reaches the end of the block without hitting a return, it implicitly returns nil."
+
+```
+makeBreakfast(bacon, eggs, toast);
+
+makeBreakfast();
+
+fun printSum(a, b) {
+  print a + b;
+}
+
+fun returnSum(a, b) {
+  return a + b;
+}
+```
+
+3.8.1 Closures
+
+First class functions
+
+```lox
+fun addPair(a, b) {
+  return a + b;
+}
+
+fun identity(a) {
+  return a;
+}
+
+print identity(addPair)(1, 2); // Prints "3".
+```
+
+Local function declaration
+
+```lox
+fun outerFunction() {
+  fun localFunction() {
+    print "I'm local!";
+  }
+
+  localFunction();
+}
+```
+
+Local functions + First Class Functions + Block Scope
+
+```
+fun returnFunction() {
+  var outside = "outside";
+
+  fun inner() {
+    print outside;
+  }
+
+  return inner;
+}
+
+var fn = returnFunction();
+fn();
+```
+
+Note: fn must retain a binding to variable `outside` for when it is called later. Therefore inner must "close over" `outside`.
+
+"These days, the term is often used for any first-class function, though it’s sort of a misnomer if the function doesn’t happen to close over any variables.
+
+As you can imagine, implementing these adds some complexity because we can no longer assume variable scope works strictly like a stack where local variables evaporate the moment the function returns."
 
 \begin{code}
 

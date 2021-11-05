@@ -28,3 +28,18 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
         - [ ] Not
         - [ ] Short Circuiting
     - [ ] Precendence and Grouping --TODO elaborate
+- [ ] Statements
+    - [ ] Statement Blocks
+    - [ ] Variable Declaration
+        - [ ] Nil as default
+    - [ ] Variable Assignment
+    - [ ] Control Flow
+        - [ ] If-else
+        - [ ] While
+        - [ ] C-style forloop
+    - [ ] Function Declaration
+        - [ ] Nil as default return value if return ommited.
+- [ ] Functions
+    - [ ] FunCall
+    - [ ] First Class
+- [ ] Closures

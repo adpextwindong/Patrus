@@ -7,10 +7,14 @@ NOTE: For now lets stick to base as much as possible and plain strings. Not sure
 4.1 - The Interpreter Framework
 
 \begin{code}
+module Patrus where
 
 import System.Environment (getArgs)
 import System.Exit (ExitCode(..), exitWith)
 import System.IO (readFile)
+
+import Debug.Trace (trace)
+todo s = trace ("TODO: " ++ s) undefined
 
 main :: IO ()
 main = main' =<< getArgs
@@ -18,8 +22,8 @@ main = main' =<< getArgs
 main' []      = runPrompt
 main' [fname] = runFile fname
 main' xs = do
-    print "Usage: Patrus [script]"
-    exitWith (ExitFailure 64)
+    putStrLn "Usage: Patrus [script]"
+    exitWith (ExitFailure 64) --EX_USAGE
 
 \end{code}
 
@@ -37,9 +41,13 @@ runFile fname = do
 \begin{code}
 
 runPrompt :: IO ()
-runPrompt = undefined --TODO REPL
+runPrompt = do
+    putStr "> "
+    line <- getLine --MATCH? Does this need to be buffered?
+    case line of
+        "" -> return ()
+        _  -> run line >> runPrompt
 
-
-run = undefined
+run source = todo "eval run"
 
 \end{code}

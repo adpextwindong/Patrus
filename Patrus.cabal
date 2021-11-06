@@ -24,7 +24,9 @@ extra-source-files:
 
 library
     build-depends:  base ^>=4.13.0.0
+                   --Lexer deps
                    ,array >= 0.5.4.0
+                   ,mtl >= 2.2.2
     exposed-modules:
         Patrus.Lexer
     hs-source-dirs: src/

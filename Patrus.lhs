@@ -12,8 +12,12 @@ module Patrus where
 import System.Environment (getArgs)
 import System.Exit (ExitCode(..), exitWith)
 import System.IO (readFile)
+import Control.Monad (forM_)
 
 import Debug.Trace (trace)
+
+import Patrus.Lexer (Token(..), scanTokens)
+
 todo s = trace ("TODO: " ++ s) undefined
 
 main :: IO ()
@@ -48,6 +52,7 @@ runPrompt = do
         "" -> return ()
         _  -> run line >> runPrompt
 
-run source = todo "eval run"
+run :: String -> IO ()
+run source = forM_ (scanTokens source) (\token -> putStrLn $ show token)
 
 \end{code}

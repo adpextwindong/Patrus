@@ -42,6 +42,9 @@ runFile fname = do
 --main' [fname] = run =<< readFile fname
 \end{code}
 
+NOTE: 11/6/21 So far the Alex lexer introduces `mtl` and `array` as dependencies.
+Currently Lexer.x uses GHC.err error.
+
 \begin{code}
 
 runPrompt :: IO ()

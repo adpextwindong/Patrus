@@ -30,6 +30,7 @@ main' xs = do
     exitWith (ExitFailure 64) --EX_USAGE
 
 \end{code}
+Source File: app/main.hs, create new file
 
 \begin{code}
 runFile :: FilePath -> IO ()
@@ -41,6 +42,7 @@ runFile fname = do
 --runFile fname = run =<< readFile fname
 --main' [fname] = run =<< readFile fname
 \end{code}
+Source File: app/main.hs, after main'
 
 NOTE: 11/6/21 So far the Alex lexer introduces `mtl` and `array` as dependencies.
 Currently Lexer.x uses GHC.err error.
@@ -57,5 +59,18 @@ runPrompt = do
 
 run :: String -> IO ()
 run source = forM_ (scanTokens source) (\token -> putStrLn $ show token)
+
+\end{code}
+Source File: app/main.hs, after runFile'
+
+4.1.1 Error Handling
+
+NOTE: first instance of global state is hadError.
+
+Hmm we might want to do Either String [Token] at this level to check and `ExitFailure 65`
+
+\begin{code}
+
+
 
 \end{code}

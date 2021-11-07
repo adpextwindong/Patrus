@@ -13,6 +13,7 @@ import Control.Monad.Except
 
 $digit = 0-9
 $alpha = [a-zA-Z]
+$alphanumeric = [_a-zA-Z0-9]
 $eol   = [\n]
 
 tokens :-
@@ -46,6 +47,31 @@ tokens :-
     ">"               { \p _ -> TOp GREATER p }
     "<"               { \p _ -> TOp LESS p }
 
+    -- Literals
+    --TODO FIX MULTI LINE STRING LITERAL
+    \" [a-zA-Z0-9]+ \" { \p s -> TStringLiteral s p }
+
+    $digit+             { \p s -> TNumberLiteral s p }
+    $digit+ \. $digit+  { \p s -> TNumberLiteral s p }
+
+    "and"                { \p s -> TKeyword AND p }
+    "class"              { \p s -> TKeyword CLASS p }
+    "else"               { \p s -> TKeyword ELSE p }
+    "false"              { \p s -> TKeyword FALSE p }
+    "for"                { \p s -> TKeyword FOR p }
+    "fun"                { \p s -> TKeyword FUN p }
+    "if"                 { \p s -> TKeyword IF p }
+    "nil"                { \p s -> TKeyword NIL p }
+    "or"                 { \p s -> TKeyword OR p }
+    "print"              { \p s -> TKeyword PRINT p }
+    "return"             { \p s -> TKeyword RETURN p }
+    "super"              { \p s -> TKeyword SUPER p }
+    "this"               { \p s -> TKeyword THIS p }
+    "true"               { \p s -> TKeyword TRUE p }
+    "var"                { \p s -> TKeyword VAR p }
+    "while"              { \p s -> TKeyword WHILE p }
+
+    $alpha $alphanumeric* { \p s -> TIdentifier s p }
 {
 
 --TODO impl Lox Lexer

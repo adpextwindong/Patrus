@@ -219,4 +219,61 @@ So far it should be able to handle code like this.
 
 4.6.1 - String Literals
 
+NOTE: "For no particular reason, Lox supports multi-line strings."
+
+NOTE: "Finally, the last interesting bit is that when we create the token, we also produce the actual string value that will be used later by the interpreter. Here, that conversion only requires a substring() to strip off the surrounding quotes. If Lox supported escape sequences like \n, we’d unescape those here."
+
 TODO unterminated string error.
+TODO multiline string lexing
+
+For now we'll use this.
+```alex
+    -- Literals
+    --TODO FIX MULTI LINE STRING LITERAL
+    \" [a-zA-Z0-9]+ \" { \p s -> TStringLiteral s p }
+```
+Source File: src/Patrus/Lexer.x, Line 50 after operators regular expressions
+
+4.6.2 - Number literals
+
+```alex
+    $digit+             { \p s -> TNumberLiteral s p }
+    $digit+ \. $digit+  { \p s -> TNumberLiteral s p }
+```
+Source File: src/Patrus/Lexer.x, Line 54 after string literal regular expression.
+
+4.7 - Reserved Words and Identifiers
+
+We'll add an alpha numeric macro to make this next bit easier.
+
+```alex
+$alphanumeric = [_a-zA-Z0-9]
+```
+Source File: src/Patrus/Lexer.x, Line 16 after alpha macro.
+
+```alex
+    $alpha $alphanumeric* { \p s -> TIdentifier s p }
+```
+Source File: src/Patrus/Lexer.x, Line 57 after number literal regular expression.
+
+```alex
+    "and"                { \p s -> TKeyword AND p }
+    "class"              { \p s -> TKeyword CLASS p }
+    "else"               { \p s -> TKeyword ELSE p }
+    "false"              { \p s -> TKeyword FALSE p }
+    "for"                { \p s -> TKeyword FOR p }
+    "fun"                { \p s -> TKeyword FUN p }
+    "if"                 { \p s -> TKeyword IF p }
+    "nil"                { \p s -> TKeyword NIL p }
+    "or"                 { \p s -> TKeyword OR p }
+    "print"              { \p s -> TKeyword PRINT p }
+    "return"             { \p s -> TKeyword RETURN p }
+    "super"              { \p s -> TKeyword SUPER p }
+    "this"               { \p s -> TKeyword THIS p }
+    "true"               { \p s -> TKeyword TRUE p }
+    "var"                { \p s -> TKeyword VAR p }
+    "while"              { \p s -> TKeyword WHILE p }
+```
+Source File: src/Patrus/Lexer.x, Line 57 BEFORE identifier regular expression.
+
+NOTE: PLACE THE KEYWORD REGULAR EXPRESSIONS *BEFORE* THE IDENTIFER REGULAR EXPRESSION TO MAKE SURE THEY DON'T GET MISTAKENLY LEXED AS IDENTIFER TOKENS.

@@ -32,3 +32,5 @@ First pass on "A Tree-walk interpreter" in Literal Haskell Style w/ Alex/Happy t
 Git submodule a fork of just [the Lox tests](https://github.com/munificent/craftinginterpreters/tree/master/test).
 
 Put all the code into their respective files after first pass.
+
+Oh wow, read through Diehl's [Alex bit](http://dev.stephendiehl.com/fun/008_extended_parser.html) carefully

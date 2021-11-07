@@ -63,14 +63,160 @@ run source = forM_ (scanTokens source) (\token -> putStrLn $ show token)
 \end{code}
 Source File: app/main.hs, after runFile'
 
-4.1.1 Error Handling
+4.1.1 - Error Handling
 
 NOTE: first instance of global state is hadError.
 
 Hmm we might want to do Either String [Token] at this level to check and `ExitFailure 65`
 
-\begin{code}
+```haskell
+scanTokens' :: String -> Except String [Token]
+scanTokens' str = go (alexStartPos,'\n',[],str)
+  where
+    go inp@(pos,_,_,str) =
+      case alexScan inp 0 of
+        AlexEOF -> return []
+        AlexError ((AlexPn _ line column),_,_,_) -> throwError $ "lexical error at " ++ (show line) ++ " line, " ++ (show column) ++ " column"
+        AlexSkip  inp' _       -> go inp'
+        AlexToken inp' len act -> do
+          res <- go inp'
+          let rest = act pos (take len str)
+          return (rest : res)
 
+--TODO replace this once we figure out if Control.Monad.Except can hang around or we ditch Alex
+scanTokens :: String -> [Token]
+scanTokens s = case (runExcept (scanTokens' s)) of
+                    Left error_str -> error error_str
+                    Right ts -> ts
+```
+Source File: src/Patrus/Lexer.x, Line 38
 
+4.2 - Lexems and Tokens
 
-\end{code}
+```lox
+var language = "lox";
+```
+
+4.2.1 Token type
+
+```haskell
+data TSingleChar = LPAREN | RPAREN | LBRACE | RBRACE
+                | COMMA | DOT | MINUS | PLUS | SEMICOLON | SLASH | STAR
+  deriving Show
+
+data TOperator = BANG | BANG_EQUAL |
+                EQUAL | EQUAL_EQUAL |
+                GREATER | GREATER_EQUAL |
+                LESS | LESS_EQUAL
+  deriving Show
+
+data TKeyword = AND | CLASS | ELSE | FALSE | FUN | FOR |  IF | NIL | OR | 
+               PRINT | RETURN | SUPER | THIS | TRUE | VAR | WHILE
+  deriving Show
+
+data Token = TSChar TSingleChar AlexPosn
+           | TOp TOperator AlexPosn
+           | TStringLiteral String AlexPosn
+           | TNumberLiteral String AlexPosn
+           | TIdentifier String AlexPosn
+           | TKeyword TKeyword AlexPosn
+           | TEOF
+    deriving Show
+```
+Source File: src/Patrus/Lexer.x, Line 24 before scanTokens'
+
+For line position information we'll just use AlexPosn for now which looks like this
+
+```haskell
+data AlexPosn = AlexPn !Int  -- absolute character offset
+                       !Int  -- line number
+                       !Int  -- column number
+```
+From the [Alex docs](https://www.haskell.org/alex/doc/html/wrappers.html#id462357).
+
+Note: Skipping toString() for now and just using the Show instance.
+
+4.4 Scanner Class
+
+TODO make sure EOF gets lexed.
+
+4.5 Recognizing Lexems
+
+```alex
+{
+{-# LANGUAGE FlexibleContexts #-}
+
+module Patrus.Lexer (
+    Token(..), TKeyword(..), TOperator(..), TSingleChar(..),
+    scanTokens
+) where
+
+import Control.Monad.Except
+}
+
+%wrapper "posn"
+
+$digit = 0-9
+$alpha = [a-zA-Z]
+$eol   = [\n]
+
+tokens :-
+    -- Whitespace insensitive
+    $eol              ;
+    $white+           ;
+
+    -- Comments
+    "//".*            ;
+
+    -- Symbols
+    \(                { \p _ -> TSChar LPAREN p }
+    \)                { \p _ -> TSChar RPAREN p }
+    \{                { \p _ -> TSChar LBRACE p }
+    \}                { \p _ -> TSChar RBRACE p }
+    \,                { \p _ -> TSChar COMMA p }
+    \.                { \p _ -> TSChar DOT p }
+    \-                { \p _ -> TSChar MINUS p }
+    \+                { \p _ -> TSChar PLUS p }
+    \;                { \p _ -> TSChar SEMICOLON p }
+    \/                { \p _ -> TSChar SLASH p }
+    \*                { \p _ -> TSChar STAR p }
+```
+Source File: src/Patrus/Lexer.x, start of file before TSingleChar datatype declaration.
+
+4.5.1 - Lexical errors
+
+See 4.1.1 notes
+
+4.5.2 - Operators
+
+```alex
+    -- Operators
+    "!="              { \p _ -> TOp BANG_EQUAL p }
+    "=="              { \p _ -> TOp EQUAL_EQUAL p }
+    ">="              { \p _ -> TOp GREATER_EQUAL p }
+    "<="              { \p _ -> TOp LESS_EQUAL p }
+    "!"               { \p _ -> TOp BANG p }
+    "="               { \p _ -> TOp EQUAL p }
+    ">"               { \p _ -> TOp GREATER p }
+    "<"               { \p _ -> TOp LESS p }
+```
+Source File: src/Patrus/Lexer.x, line 39 after symbols block.
+
+4.6 - Longer Lexemes
+
+Note: Alex handles this slash handling for us already.
+
+TODO fix EOF handling incase parser needs it.
+TODO check how jlox lexes "\0" vs "+".
+
+So far it should be able to handle code like this.
+
+```lox
+// this is a comment
+(( )){} // grouping stuff
+!*+-/=<> <= == // operators
+```
+
+4.6.1 - String Literals
+
+TODO unterminated string error.

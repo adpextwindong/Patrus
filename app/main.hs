@@ -1,4 +1,4 @@
-module Patrus where
+module Main where
 
 import System.Environment (getArgs)
 import System.Exit (ExitCode(..), exitWith)

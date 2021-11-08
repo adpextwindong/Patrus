@@ -45,6 +45,13 @@ executable PatrusLiterate
     hs-source-dirs:   .
     default-language: Haskell2010
 
+executable jloxlexMatch
+    main-is:          app/jloxlexMatch.hs
+    build-depends:    base ^>=4.13.0.0, Patrus
+    build-tool-depends: alex:alex, happy:happy
+    hs-source-dirs:   .
+    default-language: Haskell2010
+
 source-repository head
     type:   git
     location: https://github.com/adpextwindong/Patrus/

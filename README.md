@@ -8,22 +8,17 @@ A punt on Colin's favorite book ["Crafting Interpreters"](https://craftinginterp
 
 [Syntax and Lexical Grammar Appendix](https://craftinginterpreters.com/appendix-i.html)
 
-```
-Hécate — Today at 1:29 AM
-@adpx take some inspiration for Megaparsec here ~>https://github.com/kleidukos/Intrigue
-and Diehl I think made  some stuff in Megaparsec in his tutorials
-but do start with Alex/Happy
-```
+[Language Features](LanguageFeatures.md)
+
+Notes from [Chapter 3 on The Lox Language](LoxLanguageNotes.md) 
 
 ## Deps
 
-Alex & Happy
+Alex & Happy for lexing/parsing.
 
 ```
 $ cabal install alex happy
 ```
-
-Lexer largely modeled off of this [tut](https://github.com/cse130-sp18/arith/blob/master/src/Language/Arith/Lexer.x).
 
 ## TODOS
 
@@ -33,4 +28,4 @@ Git submodule a fork of just [the Lox tests](https://github.com/munificent/craft
 
 Put all the code into their respective files after first pass.
 
-Oh wow, read through Diehl's [Alex bit](http://dev.stephendiehl.com/fun/008_extended_parser.html) carefully
+Switch to Megaparsec eventually. Look at [kleidukos/Intrigue](https://github.com/kleidukos/Intrigue)

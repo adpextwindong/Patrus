@@ -66,3 +66,7 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
 - [ ] "Standard Library"
     - [ ] Built-in `print`
     - [ ] Clock Function for benchmarking
+
+## Lexer Notes
+
+- [ ] Multi Line String Literals

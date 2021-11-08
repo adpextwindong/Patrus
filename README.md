@@ -20,11 +20,11 @@ Alex & Happy for lexing/parsing.
 $ cabal install alex happy
 ```
 
+To make testing against jlox simple I created a [fork of the Crafting Interpreters repo](https://github.com/adpextwindong/craftinginterpreters) that adds a [--lex flag](https://github.com/adpextwindong/craftinginterpreters/commit/77caee73f543396ffb3699ebe6f2ed935af03a69) to jlox. It's added a git submodule. To build it you'll need to install Dart and Java and `make get; make jlox`.
+
 ## TODOS
 
 First pass on "A Tree-walk interpreter" in Literal Haskell Style w/ Alex/Happy to see the presentation flow. See [Patrus.lhs](Patrus.lhs) for notes as I go along.
-
-Git submodule a fork of just [the Lox tests](https://github.com/munificent/craftinginterpreters/tree/master/test).
 
 Put all the code into their respective files after first pass.
 

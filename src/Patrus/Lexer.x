@@ -7,6 +7,7 @@ module Patrus.Lexer (
 ) where
 
 import Control.Monad.Except
+import Data.Char (toLower)
 }
 
 %wrapper "posn"
@@ -117,4 +118,16 @@ scanTokens :: String -> [Token]
 scanTokens s = case (runExcept (scanTokens' s)) of
                     Left error_str -> error error_str
                     Right ts -> ts
+
+-- TESTING
+
+testToString :: Token -> String
+testToString (TKeyword k _) = show k <> " " <> fmap toLower (show k) <> " null"
+testToString (TEOF) = "EOF  null"
+--TODO finish rest
+testToString _ = undefined
+
+jloxlexMatch :: String -> IO ()
+jloxlexMatch s = forM_ (testToString <$> scanTokens s) (\match -> putStrLn match)
+
 }

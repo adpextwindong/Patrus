@@ -27,8 +27,12 @@ library
                    --Lexer deps
                    ,array >= 0.5.4.0
                    ,mtl >= 2.2.2
+                   ,utf8-string >= 1.0.2
     exposed-modules:
-        Patrus.Lexer
+        Patrus.Lexer,
+        Patrus.Parser,
+        Patrus.AST
+        
     hs-source-dirs: src/
     
 executable PatrusMain

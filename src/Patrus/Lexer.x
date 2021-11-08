@@ -3,7 +3,7 @@
 
 module Patrus.Lexer (
     Token(..), TKeyword(..), TOperator(..), TSingleChar(..),
-    scanTokens
+    scanTokens, jloxlexMatch, testToString
 ) where
 
 import Control.Monad.Except
@@ -26,10 +26,10 @@ tokens :-
     "//".*            ;
 
     -- Symbols
-    \(                { \p _ -> TSChar LPAREN p }
-    \)                { \p _ -> TSChar RPAREN p }
-    \{                { \p _ -> TSChar LBRACE p }
-    \}                { \p _ -> TSChar RBRACE p }
+    \(                { \p _ -> TSChar LEFT_PAREN p }
+    \)                { \p _ -> TSChar RIGHT_PAREN p }
+    \{                { \p _ -> TSChar LEFT_BRACE p }
+    \}                { \p _ -> TSChar RIGHT_BRACE p }
     \,                { \p _ -> TSChar COMMA p }
     \.                { \p _ -> TSChar DOT p }
     \-                { \p _ -> TSChar MINUS p }
@@ -50,7 +50,7 @@ tokens :-
 
     -- Literals
     --TODO FIX MULTI LINE STRING LITERAL
-    \" [a-zA-Z0-9]+ \" { \p s -> TStringLiteral s p }
+    \" [a-zA-Z0-9]* \" { \p s -> TStringLiteral s p }
 
     $digit+             { \p s -> TNumberLiteral s p }
     $digit+ \. $digit+  { \p s -> TNumberLiteral s p }
@@ -72,23 +72,23 @@ tokens :-
     "var"                { \p s -> TKeyword VAR p }
     "while"              { \p s -> TKeyword WHILE p }
 
-    $alpha $alphanumeric* { \p s -> TIdentifier s p }
+    $alphanumeric+ { \p s -> TIdentifier s p }
 {
 
 --TODO impl Lox Lexer
 
-data TSingleChar = LPAREN | RPAREN | LBRACE | RBRACE
-                | COMMA | DOT | MINUS | PLUS | SEMICOLON | SLASH | STAR
+data TSingleChar = LEFT_PAREN | RIGHT_PAREN | LEFT_BRACE | RIGHT_BRACE
+                 | COMMA | DOT | MINUS | PLUS | SEMICOLON | SLASH | STAR
   deriving Show
 
 data TOperator = BANG | BANG_EQUAL |
-                EQUAL | EQUAL_EQUAL |
-                GREATER | GREATER_EQUAL |
-                LESS | LESS_EQUAL
+                 EQUAL | EQUAL_EQUAL |
+                 GREATER | GREATER_EQUAL |
+                 LESS | LESS_EQUAL
   deriving Show
 
 data TKeyword = AND | CLASS | ELSE | FALSE | FUN | FOR |  IF | NIL | OR |
-               PRINT | RETURN | SUPER | THIS | TRUE | VAR | WHILE
+                PRINT | RETURN | SUPER | THIS | TRUE | VAR | WHILE
   deriving Show
 
 data Token = TSChar TSingleChar AlexPosn
@@ -121,11 +121,43 @@ scanTokens s = case (runExcept (scanTokens' s)) of
 
 -- TESTING
 
+tscChar :: TSingleChar -> Char
+tscChar (LEFT_PAREN)  = '('
+tscChar (RIGHT_PAREN) = ')'
+tscChar (LEFT_BRACE)  = '{'
+tscChar (RIGHT_BRACE) = '}'
+tscChar (COMMA)       = ','
+tscChar (DOT)         = '.'
+tscChar (MINUS)       = '-'
+tscChar (PLUS)        = '+'
+tscChar (SEMICOLON)   = ';'
+tscChar (SLASH)       = '/'
+tscChar (STAR)        = '*'
+
+opString :: TOperator -> String
+opString (BANG_EQUAL)    = "!="
+opString (EQUAL_EQUAL)   = "=="
+opString (GREATER_EQUAL) = ">="
+opString (LESS_EQUAL)    = "<="
+opString (BANG)          = "!"
+opString (EQUAL)         = "="
+opString (GREATER)       = ">"
+opString (LESS)          = "<"
+
+--Watch out not safe on empty
+dropEscapedQuotes :: String -> String
+dropEscapedQuotes = init . tail
+
+--Made to match jlox's toString impl
 testToString :: Token -> String
-testToString (TKeyword k _) = show k <> " " <> fmap toLower (show k) <> " null"
 testToString (TEOF) = "EOF  null"
---TODO finish rest
-testToString _ = undefined
+testToString (TKeyword k _) = show k <> " " <> fmap toLower (show k) <> " null"
+testToString (TSChar sc _)  = show sc <> " " <> [tscChar sc] <> " null"
+testToString (TOp op _)     = show op <> " " <> opString op <> " null"
+testToString (TIdentifier s _) = "IDENTIFIER " <> s <> " null"
+testToString (TStringLiteral "\"\"" _) = "STRING " <> "\"\""
+testToString (TStringLiteral s _) = "STRING " <> s <> " " <> dropEscapedQuotes s
+testToString (TNumberLiteral s _) = "NUMBER " <> s <> " " <> show (read s :: Float)
 
 jloxlexMatch :: String -> IO ()
 jloxlexMatch s = forM_ (testToString <$> scanTokens s) (\match -> putStrLn match)

@@ -38,9 +38,6 @@ runFile fname = do
     fileContents <- readFile fname
     run fileContents
 
---alt style
---runFile fname = run =<< readFile fname
---main' [fname] = run =<< readFile fname
 \end{code}
 Source File: app/main.hs, after main'
 
@@ -52,7 +49,7 @@ Currently Lexer.x uses GHC.err error.
 runPrompt :: IO ()
 runPrompt = do
     putStr "> "
-    line <- getLine --MATCH? Does this need to be buffered?
+    line <- getLine
     case line of
         "" -> return ()
         _  -> run line >> runPrompt
@@ -100,8 +97,8 @@ var language = "lox";
 4.2.1 Token type
 
 ```haskell
-data TSingleChar = LPAREN | RPAREN | LBRACE | RBRACE
-                | COMMA | DOT | MINUS | PLUS | SEMICOLON | SLASH | STAR
+data TSingleChar = LEFT_PAREN | RIGHT_PAREN | LEFT_BRACE | RIGHT_BRACE
+                 | COMMA | DOT | MINUS | PLUS | SEMICOLON | SLASH | STAR
   deriving Show
 
 data TOperator = BANG | BANG_EQUAL |
@@ -111,7 +108,7 @@ data TOperator = BANG | BANG_EQUAL |
   deriving Show
 
 data TKeyword = AND | CLASS | ELSE | FALSE | FUN | FOR |  IF | NIL | OR | 
-               PRINT | RETURN | SUPER | THIS | TRUE | VAR | WHILE
+                PRINT | RETURN | SUPER | THIS | TRUE | VAR | WHILE
   deriving Show
 
 data Token = TSChar TSingleChar AlexPosn
@@ -169,10 +166,10 @@ tokens :-
     "//".*            ;
 
     -- Symbols
-    \(                { \p _ -> TSChar LPAREN p }
-    \)                { \p _ -> TSChar RPAREN p }
-    \{                { \p _ -> TSChar LBRACE p }
-    \}                { \p _ -> TSChar RBRACE p }
+    \(                { \p _ -> TSChar LEFT_PAREN p }
+    \)                { \p _ -> TSChar RIGHT_PAREN p }
+    \{                { \p _ -> TSChar LEFT_BRACE p }
+    \}                { \p _ -> TSChar RIGHT_BRACE p }
     \,                { \p _ -> TSChar COMMA p }
     \.                { \p _ -> TSChar DOT p }
     \-                { \p _ -> TSChar MINUS p }
@@ -230,7 +227,7 @@ For now we'll use this.
 ```alex
     -- Literals
     --TODO FIX MULTI LINE STRING LITERAL
-    \" [a-zA-Z0-9]+ \" { \p s -> TStringLiteral s p }
+    \" [a-zA-Z0-9]* \" { \p s -> TStringLiteral s p }
 ```
 Source File: src/Patrus/Lexer.x, Line 50 after operators regular expressions
 
@@ -252,7 +249,7 @@ $alphanumeric = [_a-zA-Z0-9]
 Source File: src/Patrus/Lexer.x, Line 16 after alpha macro.
 
 ```alex
-    $alpha $alphanumeric* { \p s -> TIdentifier s p }
+    $alpha $alphanumeric+ { \p s -> TIdentifier s p }
 ```
 Source File: src/Patrus/Lexer.x, Line 57 after number literal regular expression.
 

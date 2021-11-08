@@ -27,7 +27,7 @@ runFile fname = do
 runPrompt :: IO ()
 runPrompt = do
     putStr "> "
-    line <- getLine --MATCH? Does this need to be buffered?
+    line <- getLine
     case line of
         "" -> return ()
         _  -> run line >> runPrompt

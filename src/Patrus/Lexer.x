@@ -49,8 +49,7 @@ tokens :-
     "<"               { \p _ -> TOp LESS p }
 
     -- Literals
-    --TODO FIX MULTI LINE STRING LITERAL
-    \" [a-zA-Z0-9]* \" { \p s -> TStringLiteral s p }
+    \" [a-zA-Z0-9\n]* \" { \p s -> TStringLiteral s p }
 
     $digit+             { \p s -> TNumberLiteral s p }
     $digit+ \. $digit+  { \p s -> TNumberLiteral s p }

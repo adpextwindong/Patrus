@@ -274,3 +274,6 @@ Source File: src/Patrus/Lexer.x, Line 57 after number literal regular expression
 Source File: src/Patrus/Lexer.x, Line 57 BEFORE identifier regular expression.
 
 NOTE: PLACE THE KEYWORD REGULAR EXPRESSIONS *BEFORE* THE IDENTIFER REGULAR EXPRESSION TO MAKE SURE THEY DON'T GET MISTAKENLY LEXED AS IDENTIFER TOKENS.
+
+NOTE: For the time being it doesn't seem like Lox has escaped characters in string literals so adding '\n' seems to patch over the multi-line string literal issue. `jlox --lex`` shows that it'll skip over the error and continue lexing but a file ran with just `jlox` won't be interpreted if theres a lexical error in any of the lines.
+TODO: write a test show casing this behavior.

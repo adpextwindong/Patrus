@@ -69,4 +69,6 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
 
 ## Lexer Notes
 
-- [ ] Multi Line String Literals
+- [x] Multi Line String Literals
+
+No escaped characters, quotemarks for example, have to be lexed so this turned out easier than expected.

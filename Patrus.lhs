@@ -226,8 +226,7 @@ TODO multiline string lexing
 For now we'll use this.
 ```alex
     -- Literals
-    --TODO FIX MULTI LINE STRING LITERAL
-    \" [a-zA-Z0-9]* \" { \p s -> TStringLiteral s p }
+    \" [a-zA-Z0-9\n]* \" { \p s -> TStringLiteral s p }
 ```
 Source File: src/Patrus/Lexer.x, Line 50 after operators regular expressions
 

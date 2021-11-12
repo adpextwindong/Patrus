@@ -29,6 +29,7 @@ library
                    ,mtl >= 2.2.2
     exposed-modules:
         Patrus.Lexer
+        Patrus.AST
     hs-source-dirs: src/
     
 executable PatrusMain

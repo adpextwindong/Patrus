@@ -385,3 +385,84 @@ main = do
 
 -- (* (- 123) (group 45.67))
 ```
+
+# 6 - Parsing Expressions
+
+```
+6 / 3 - 1
+```
+
+```
+expression     → literal
+               | unary
+               | binary
+               | grouping ;
+
+literal        → NUMBER | STRING | "true" | "false" | "nil" ;
+grouping       → "(" expression ")" ;
+unary          → ( "-" | "!" ) expression ;
+binary         → expression operator expression ;
+operator       → "==" | "!=" | "<" | "<=" | ">" | ">="
+               | "+"  | "-"  | "*" | "/" ;
+```
+
+With this it could be parsed as either
+
+```
+(6 / (3 - 1))
+```
+or
+```
+((6/3) - 1)
+```
+
+The culprit being the binary rule in expression. It allows for operand nesting in any way.
+
+To combat this:
+
+- Precedence, "Higher precedence binds tighter"
+- Associativity, (5 - 3 - 1) => ((5 - 3) - 1)
+
+Lox Precedence Rules
+
+Lowest to highest in terms of precedence rules.
+
+|Name|Operators|Associates|
+|-|-|-|
+|Equality|== !=|Left|
+|Comparison|> >= < <=|Left|
+|Term|- +|Left|
+|Factor|/ *|Left|
+|Unary|! -|Right|
+
+
+Original Grammar for the math expression example.
+```
+expression     → literal
+               | unary
+               | binary
+               | grouping ;
+
+literal        → NUMBER | STRING | "true" | "false" | "nil" ;
+grouping       → "(" exnary          → pression ")" ;
+unary          → ( "-" | "!" ) expression ;
+binary         → expression operator expression ;
+operator       → "==" | "!=" | "<" | "<=" | ">" | ">="
+               | "+"  | "-"  | "*" | "/" ;
+```
+
+Instead of stuffing everything into a single expression rule we can define a seperate rule for each precedence level, stratifying the gammar.
+
+```
+expression     → ...
+equality       → ...
+comparison     → ...
+term           → ...
+factor         → ...
+unary          → ...
+primary        → ...
+```
+
+Primary covers the highest-precedence forms, literals and parenthesized expressions. Term can match `1 + 2` and `3 * 4 / 5`.
+
+So we pretty much lifted literals and unary out to higher precedence levels.

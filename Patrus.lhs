@@ -504,3 +504,108 @@ primary     -> NUMBER | STRING | "true" | "false" | "nil"
 Unary being right recursive handles nesting like !!true. Precedence of primary prevents it from not terminating.
 
 --TODO look at the appendix grammar
+
+Begin the parser by copying over token definitions from Lexer.x
+
+It should look like this.
+
+```
+{
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+
+module Patrus.Parser where
+
+import Control.Monad.Except
+import Control.Exception
+
+import Patrus.Lexer
+import Patrus.AST
+
+}
+
+--Entry Point
+
+%name expressionParse
+
+%tokentype { Token }
+
+-- Parser monad
+%monad { Except String } { (>>=) } { return }
+%error { parseError }
+
+-- Token Names
+
+%token
+    --TSingleChar
+    LEFT_PAREN      { TSChar LEFT_PAREN _ }
+
+    RIGHT_PAREN     { TSChar RIGHT_PAREN _ }
+    LEFT_BRACE      { TSChar LEFT_BRACE _ }
+    RIGHT_BRACE     { TSChar RIGHT_BRACE _ }
+    COMMA           { TSChar COMMA _ }
+    DOT             { TSChar DOT _ }
+    MINUS           { TSChar MINUS _ }
+    PLUS            { TSChar PLUS _ }
+    SEMICOLON       { TSChar SEMICOLON _ }
+    SLASH           { TSChar SLASH _ }
+    STAR            { TSChar STAR _ }
+
+    -- Operators
+    BANG_EQUAL      { TOp BANG_EQUAL _ }
+    EQUAL_EQUAL     { TOp EQUAL_EQUAL _ }
+    GREATER_EQUAL   { TOp GREATER_EQUAL _ }
+    LESS_EQUAL      { TOp LESS_EQUAL _ }
+    BANG            { TOp BANG _ }
+    EQUAL           { TOp EQUAL _ }
+    GREATER         { TOp GREATER _ }
+    LESS            { TOp LESS _ }
+
+    -- Literals
+    TStringLiteral  { TStringLiteral _ _ }
+    TNumberLiteral  { TNumberLiteral _ _ }
+
+    AND             { TKeyword AND _ }
+    CLASS           { TKeyword CLASS _ }
+    ELSE            { TKeyword ELSE _ }
+    FALSE           { TKeyword FALSE _ }
+    FOR             { TKeyword FOR _ }
+    FUN             { TKeyword FUN _ }
+    IF              { TKeyword IF _ }
+    NIL             { TKeyword NIL _ }
+    OR              { TKeyword OR _ }
+    PRINT           { TKeyword PRINT _ }
+    RETURN          { TKeyword RETURN _ }
+    SUPER           { TKeyword SUPER _ }
+    THIS            { TKeyword THIS _ }
+    TRUE            { TKeyword TRUE _ }
+    VAR             { TKeyword VAR _ }
+    WHILE           { TKeyword WHILE _ }
+
+    TIdentifier     { TIdentifier _ _ }
+   %%
+
+-- Production Rules
+
+Equality : { undefined }
+Expr : Equality { $1 }
+
+{
+
+parseError :: [Token] -> Except String a
+parseError (l:ls) = throwError (show l)
+parseError []     = throwError "Unexpected end of Input"
+
+parseExpression :: String -> Expr
+parseExpression s = case parseExpression' s of
+                Left msg -> error ("parse error:" ++ msg)
+                Right e -> e
+
+parseExpression' input = runExcept $ do
+    expressionParse (scanTokens input)
+
+}
+```
+Source File: src/Patrus/Parser.y, create new file
+
+For the time being the Equality production rule returns undefined so we can type check the rest.

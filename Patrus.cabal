@@ -28,6 +28,7 @@ library
                    ,array >= 0.5.4.0
                    ,mtl >= 2.2.2
     exposed-modules:
+        Patrus.Parser
         Patrus.Lexer
         Patrus.AST
     hs-source-dirs: src/

@@ -520,7 +520,7 @@ import Control.Monad.Except
 import Control.Exception
 
 import Patrus.Lexer
-import Patrus.AST
+import Patrus.AST as AST
 
 }
 
@@ -609,3 +609,16 @@ parseExpression' input = runExcept $ do
 Source File: src/Patrus/Parser.y, create new file
 
 For the time being the Equality production rule returns undefined so we can type check the rest.
+
+One thing to note about Happy is that each rule does have a return type so you can use that to typecheck your production rule expressions. Another thing to note is that each production term after the colon is associated with a number starting a 1.
+
+For example
+
+```
+Equality : Comparison BANG_EQUAL Comparison    { BOp NEQ $1 $3 }
+         | Comparison EQUAL_EQUAL Comparison   { BOp AST.EQ $1 $3 }
+         | Comparison                          { $1 }
+
+Comparison : { undefined }
+```
+Source File: src/Patrus/Parser.y, add after Expr production rule

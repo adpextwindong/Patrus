@@ -1,14 +1,13 @@
 {
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-
 module Patrus.Parser where
 
 import Control.Monad.Except
 import Control.Exception
 
 import Patrus.Lexer
-import Patrus.AST
+import Patrus.AST as AST
 
 }
 
@@ -75,8 +74,15 @@ import Patrus.AST
 
 -- Production Rules
 
-Equality : { undefined }
 Expr : Equality { $1 }
+
+Equality : Comparison BANG_EQUAL Comparison     { BOp NEQ $1 $3 }
+         | Comparison EQUAL_EQUAL Comparison    { BOp AST.EQ $1 $3 }
+         | Comparison                           { $1 }
+
+Comparison : { undefined }
+
+
 
 {
 

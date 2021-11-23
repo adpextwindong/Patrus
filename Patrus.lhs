@@ -416,6 +416,26 @@ or
 ((6/3) - 1)
 ```
 
+The parsing paths respectively being:
+
+Start at expression
+1. Pick binary.
+    - For the left expression, pick NUMBER 6
+    - For the operator, pick operator /
+    - For the right expression, pick binary
+        - pick number 3 for left expression
+        - pick operator -
+        - pick number 1 for right expression
+
+The other parse path starting at expression being:
+1. Pick binary,
+    - For the left expression, pick binary
+        - Pick number 6
+        - pick operator /
+        - pick number 3
+    - For the operator pick -
+    - For the right expresion, pick number 1
+
 The culprit being the binary rule in expression. It allows for operand nesting in any way.
 
 To combat this:
@@ -466,3 +486,21 @@ primary        → ...
 Primary covers the highest-precedence forms, literals and parenthesized expressions. Term can match `1 + 2` and `3 * 4 / 5`.
 
 So we pretty much lifted literals and unary out to higher precedence levels.
+
+Now we have well defined precedence and associativity to prevent ambiguity during parsing.
+
+```
+expression  -> equality ;
+equality    -> comparison ( ( "!=" | "==" ) comparison )* ;
+comparision -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+term        -> facator ( ( "-" | "+" ) factor )* ;
+factor      -> unary ( ( "/" | "*" ) unary )* ;
+unary       -> ( "!" | "*" ) unary )* ;
+            | primary ;
+primary     -> NUMBER | STRING | "true" | "false" | "nil"
+            | "(" expression ")" ;
+```
+
+Unary being right recursive handles nesting like !!true. Precedence of primary prevents it from not terminating.
+
+--TODO look at the appendix grammar

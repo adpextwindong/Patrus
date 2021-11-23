@@ -70,19 +70,34 @@ import Patrus.AST as AST
     WHILE           { TKeyword WHILE _ }
 
     TIdentifier     { TIdentifier _ _ }
+    TEOF            { TEOF }
    %%
 
 -- Production Rules
 
+--Hack around TEOF
+TopLevel : Expr TEOF { $1 }
+
 Expr : Equality { $1 }
 
-Equality : Comparison BANG_EQUAL Comparison     { BOp NEQ $1 $3 }
-         | Comparison EQUAL_EQUAL Comparison    { BOp AST.EQ $1 $3 }
+Equality : Comparison BANG_EQUAL Equality       { BOp NEQ $1 $3 }
+         | Comparison EQUAL_EQUAL Equality      { BOp AST.EQ $1 $3 }
          | Comparison                           { $1 }
 
-Comparison : { undefined }
+Comparison : Term                               { $1 }
+        --TODO term ops
 
+Term : Factor                                   { $1 }
+        --TODO ops
 
+Factor : Unary                                  { $1 }
+        --TODO ops
+
+Unary : Primary                                 { $1 }
+        --TODO ops
+
+Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit (StringLit s)) $1 }
+        --TODO other literals
 
 {
 

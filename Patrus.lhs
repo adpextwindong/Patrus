@@ -583,6 +583,7 @@ import Patrus.AST as AST
     WHILE           { TKeyword WHILE _ }
 
     TIdentifier     { TIdentifier _ _ }
+    TEOF            { TEOF }
    %%
 
 -- Production Rules
@@ -622,3 +623,81 @@ Equality : Comparison BANG_EQUAL Comparison    { BOp NEQ $1 $3 }
 Comparison : { undefined }
 ```
 Source File: src/Patrus/Parser.y, add after Expr production rule
+
+```
+ data BinOp = EQ | NEQ | LT | LTE | GT | GTE
+            | Plus | Minus | Mul | Div
++           deriving Show
+
+ data UnaryOp = Negate | Not
++    deriving Show
+
+ data Literal = NumberLit Double
+              | StringLit String
+              | TrueLit
+              | FalseLit
+              | Nil
++                deriving Show
+
+ data Expr = BOp BinOp Expr Expr
+           | UOp UnaryOp Expr
+           | Lit Literal
+           | Group Expr
++            deriving Show
+```
+Source File: src/Patrus/AST.hs, add Show instances.
+
+For the sake of simple testing we'll add Show instances to the current AST.
+
+For working around the end of file token for now we'll have a top most production rule that dispatches to Expr and consumes the TEOF token.
+
+```
+--Hack around TEOF
+TopLevel : Expr TEOF { $1 }
+```
+Source File: src/Patrus/Parser.y, add before Expr production rule.
+
+Additionally to test that equality is being parsed lets fill out the remaining production rules just enough to test string literal equality parsing.
+
+```
+-Equality : Comparison BANG_EQUAL Comparison     { BOp NEQ $1 $3 }
+-         | Comparison EQUAL_EQUAL Comparison    { BOp AST.EQ $1 $3 }
++Equality : Comparison BANG_EQUAL Equality       { BOp NEQ $1 $3 }
++         | Comparison EQUAL_EQUAL Equality      { BOp AST.EQ $1 $3 }
+          | Comparison                           { $1 }
+
+-Comparison : { undefined }
++Comparison : Term                               { $1 }
++        --TODO term ops
++
++Term : Factor                   { $1 }
++        --TODO ops
++
++Factor : Unary                                  { $1 }
++        --TODO ops
+
++Unary : Primary                                 { $1 }
++        --TODO ops
+
++Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit (StringLit s)) $1 }
++        --TODO other literals
+```
+Source File: src/Patrus/Parser.y, modify after Expr.
+
+Now we can test parseExpression.
+
+```
+parseExpression "\"ddd\" == \"aa\""
+
+BOp EQ (Lit (StringLit "\"ddd\"")) (Lit (StringLit "\"aa\""))
+```
+
+Heres another example
+
+```
+parseExpression "\"ddd\" == \"aa\" == \"foo\""
+
+BOp EQ (Lit (StringLit "\"ddd\"")) (BOp EQ (Lit (StringLit "\"aa\"")) (Lit (StringLit "\"foo\"")))
+```
+
+So for now things look good.

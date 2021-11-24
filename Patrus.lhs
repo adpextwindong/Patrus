@@ -752,3 +752,21 @@ BOp Div (Lit (NumberLit 6.0)) (Group (BOp Minus (Lit (NumberLit 3.0)) (Lit (Numb
 ```
 
 The rules parse as we'd like.
+
+-- 6.3 Syntax Errors
+
+Happy has an error token and partial directive.
+
+Jlox does support parsing after an error to at least show further syntax errors. For example
+
+```
+> var foo = 3; var bar = 3f; var baz = "quux"; var tx = 3f;
+[line 1] Error at 'f': Expect ';' after variable declaration.
+[line 1] Error at 'f': Expect ';' after variable declaration.
+```
+
+We'll need to figure out some way to synchronize the Happy parser to resume parsing to produce further syntax errors.
+
+NOTE: "Alas, we don’t get to see this method in action, since we don’t have statements yet. We’ll get to that in a couple of chapters. For now, if an error occurs, we’ll panic and unwind all the way to the top and stop parsing. Since we can parse only a single expression anyway, that’s no big loss."
+
+So using parseExpression' :: String -> Either String [Expr] to handle errors will be nice enough for now.

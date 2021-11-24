@@ -84,20 +84,30 @@ Equality : Comparison BANG_EQUAL Equality       { BOp NEQ $1 $3 }
          | Comparison EQUAL_EQUAL Equality      { BOp AST.EQ $1 $3 }
          | Comparison                           { $1 }
 
-Comparison : Term                               { $1 }
-        --TODO term ops
+Comparison : Term GREATER Term                  { BOp AST.GT $1 $3 }
+           | Term GREATER_EQUAL Term            { BOp AST.GTE $1 $3 }
+           | Term LESS Term                     { BOp AST.LT $1 $3 }
+           | Term LESS_EQUAL Term               { BOp AST.LTE $1 $3 }
+           | Term                               { $1 }
 
-Term : Factor                                   { $1 }
-        --TODO ops
+Term : Factor MINUS Factor                      { BOp Minus $1 $3 }
+     | Factor PLUS Factor                       { BOp Plus $1 $3 }
+     | Factor                                   { $1 }
 
-Factor : Unary                                  { $1 }
-        --TODO ops
+Factor : Unary SLASH Unary                      { BOp Div $1 $3 }
+       | Unary STAR Unary                       { BOp Mul $1 $3 }
+       | Unary                                  { $1 }
 
-Unary : Primary                                 { $1 }
-        --TODO ops
+Unary : BANG Unary                              { UOp Not $2 }
+      | MINUS Unary                             { UOp Negate $2 }
+      | Primary                                 { $1 }
 
 Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit (StringLit s)) $1 }
-        --TODO other literals
+        | TNumberLiteral                        { (\(TNumberLiteral s _) -> Lit (NumberLit (read s))) $1 }
+        | TRUE                                  { Lit TrueLit }
+        | FALSE                                 { Lit FalseLit }
+        | NIL                                   { Lit Nil }
+        | LEFT_PAREN Expr RIGHT_PAREN           { Group $2 }
 
 {
 

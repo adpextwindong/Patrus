@@ -18,8 +18,7 @@ prettyPrintAST (Lit v)          = prettyPrintLit v
 prettyPrintLit :: Literal -> String
 prettyPrintLit (NumberLit v)    = formatFloat v
 prettyPrintLit (StringLit s)    = show s
-prettyPrintLit (TrueLit)        = show True
-prettyPrintLit (FalseLit)       = show False
+prettyPrintLit (BoolLit b)      = show b
 prettyPrintLit (Nil)            = "nil"
 
 prettyPrintBop :: BinOp -> String

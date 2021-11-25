@@ -104,8 +104,8 @@ Unary : BANG Unary                              { UOp Not $2 }
 
 Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit (StringLit s)) $1 }
         | TNumberLiteral                        { (\(TNumberLiteral s _) -> Lit (NumberLit (read s))) $1 }
-        | TRUE                                  { Lit TrueLit }
-        | FALSE                                 { Lit FalseLit }
+        | TRUE                                  { Lit (BoolLit True) }
+        | FALSE                                 { Lit (BoolLit False) }
         | NIL                                   { Lit Nil }
         | LEFT_PAREN Expr RIGHT_PAREN           { Group $2 }
 

@@ -30,7 +30,7 @@ data Error = BOPTyMismatch String
            | UOPTyMismatch String
            deriving Show
 
-bopTyMismatch = BOPTyMismatch "Operands have mismatching types."
+bopTyMismatch = BOPTyMismatch "Operands must be numbers."
 plusTyMismatch = BOPTyMismatch "Operands must be two numbers or two strings."
 
 -- Evaluate the expression or return an error.
@@ -60,7 +60,10 @@ eval (BOp Div (Lit (NumberLit x)) (Lit (NumberLit y)))    = Right $ Lit $ Number
 
 -- Sub expressions need to be evaluated and type mismatches should be handled.
 eval (BOp operator e1 e2) = case literalBopTyMatch (eval e1) (eval e2) of
-                                Left _ -> Left plusTyMismatch
+                                Left _ -> case operator of
+                                            Plus -> Left plusTyMismatch
+                                            _ ->    Left bopTyMismatch
+
                                 Right (e1',e2') -> eval (BOp operator e1' e2')
 
 --eval e = trace ("EXHAUST: "<> show e) $ Left undefined
@@ -73,8 +76,6 @@ literalBopTyMatch _ (Left err) = Left err
 literalBopTyMatch (Right e1@(Lit (NumberLit _))) (Right e2@(Lit (NumberLit _))) = Right (e1,e2)
 literalBopTyMatch (Right e1@(Lit (StringLit _))) (Right e2@(Lit (StringLit _))) = Right (e1,e2)
 literalBopTyMatch (Right e1@(Lit (BoolLit _ ))) (Right e2@(Lit (BoolLit _ ))) = Right (e1, e2)
-literalBopTyMatch (Right (Lit Nil)) _ = Left bopTyMismatch
-literalBopTyMatch _ (Right (Lit Nil)) = Left bopTyMismatch
 literalBopTyMatch _ _ = Left bopTyMismatch
 
 evalTruthy :: ComparrisonOp -> Either Error Expr -> Either Error Expr -> Either Error Expr

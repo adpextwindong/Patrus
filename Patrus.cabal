@@ -31,15 +31,16 @@ library
         Patrus.Parser
         Patrus.Lexer
         Patrus.AST
+        Patrus.AST.PrettyPrinter
     hs-source-dirs: src/
-    
+
 executable PatrusMain
     main-is:          app/main.hs
     build-depends:    base ^>=4.13.0.0, Patrus
     build-tool-depends: alex:alex, happy:happy
     hs-source-dirs:   .
     default-language: Haskell2010
-    
+
 executable PatrusLiterate
     main-is:          Patrus.lhs
     build-depends:    base ^>=4.13.0.0, Patrus

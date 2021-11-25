@@ -770,3 +770,7 @@ We'll need to figure out some way to synchronize the Happy parser to resume pars
 NOTE: "Alas, we don’t get to see this method in action, since we don’t have statements yet. We’ll get to that in a couple of chapters. For now, if an error occurs, we’ll panic and unwind all the way to the top and stop parsing. Since we can parse only a single expression anyway, that’s no big loss."
 
 So using parseExpression' :: String -> Either String [Expr] to handle errors will be nice enough for now.
+
+-- 7 - Evaluating Expressions
+
+NOTE: Lift the PrettyPrinting code out to its own module, src/Patrus/AST/PrettyPrinter.

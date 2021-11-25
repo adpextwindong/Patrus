@@ -774,3 +774,7 @@ So using parseExpression' :: String -> Either String [Expr] to handle errors wil
 -- 7 - Evaluating Expressions
 
 NOTE: Lift the PrettyPrinting code out to its own module, src/Patrus/AST/PrettyPrinter.
+
+NOTE: A lot of refactoring goes on in this section to make dynamic typechecking during eval simpler.
+
+Wow this book leverages a lot of Java's semmantics during typechecking.

@@ -22,12 +22,12 @@ prettyPrintLit (BoolLit b)      = show b
 prettyPrintLit (Nil)            = "nil"
 
 prettyPrintBop :: BinOp -> String
-prettyPrintBop (A.EQ)   = "=="
-prettyPrintBop (NEQ)    = "!="
-prettyPrintBop (A.LT)   = "<"
-prettyPrintBop (LTE)    = "<="
-prettyPrintBop (A.GT)   = ">"
-prettyPrintBop (A.GTE)  = ">="
+prettyPrintBop (Cmp (A.EQ))  = "=="
+prettyPrintBop (Cmp (NEQ))   = "!="
+prettyPrintBop (Cmp (A.LT))  = "<"
+prettyPrintBop (Cmp (LTE))   = "<="
+prettyPrintBop (Cmp (A.GT))  = ">"
+prettyPrintBop (Cmp (A.GTE)) = ">="
 prettyPrintBop (Plus)   = "+"
 prettyPrintBop (Minus)  = "-"
 prettyPrintBop (Mul)    = "*"

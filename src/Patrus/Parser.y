@@ -80,14 +80,14 @@ TopLevel : Expr TEOF { $1 }
 
 Expr : Equality { $1 }
 
-Equality : Comparison BANG_EQUAL Equality       { BOp NEQ $1 $3 }
-         | Comparison EQUAL_EQUAL Equality      { BOp AST.EQ $1 $3 }
+Equality : Comparison BANG_EQUAL Equality       { BOp (Cmp NEQ) $1 $3 }
+         | Comparison EQUAL_EQUAL Equality      { BOp (Cmp AST.EQ) $1 $3 }
          | Comparison                           { $1 }
 
-Comparison : Term GREATER Term                  { BOp AST.GT $1 $3 }
-           | Term GREATER_EQUAL Term            { BOp AST.GTE $1 $3 }
-           | Term LESS Term                     { BOp AST.LT $1 $3 }
-           | Term LESS_EQUAL Term               { BOp AST.LTE $1 $3 }
+Comparison : Term GREATER Term                  { BOp (Cmp AST.GT) $1 $3 }
+           | Term GREATER_EQUAL Term            { BOp (Cmp AST.GTE) $1 $3 }
+           | Term LESS Term                     { BOp (Cmp AST.LT) $1 $3 }
+           | Term LESS_EQUAL Term               { BOp (Cmp AST.LTE) $1 $3 }
            | Term                               { $1 }
 
 Term : Factor MINUS Factor                      { BOp Minus $1 $3 }

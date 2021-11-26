@@ -1,12 +1,12 @@
-A Tree-Walk Interpreter
+# [A Tree-Walk Interpreter](https://craftinginterpreters.com/a-tree-walk-interpreter.html)
 
 NOTE: For now lets stick to base as much as possible and plain strings. Not sure about LazyIO either. Have to figure out the audience level for this translation.
 
-4 - Scanning
+## [4 - Scanning](https://craftinginterpreters.com/scanning.html)
 
-4.1 - The Interpreter Framework
+### [4.1 - The Interpreter Framework](https://craftinginterpreters.com/scanning.html#the-interpreter-framework)
 
-\begin{code}
+```haskell
 module Patrus where
 
 import System.Environment (getArgs)
@@ -29,22 +29,22 @@ main' xs = do
     putStrLn "Usage: Patrus [script]"
     exitWith (ExitFailure 64) --EX_USAGE
 
-\end{code}
+```
 Source File: app/main.hs, create new file
 
-\begin{code}
+```haskell
 runFile :: FilePath -> IO ()
 runFile fname = do
     fileContents <- readFile fname
     run fileContents
 
-\end{code}
+```
 Source File: app/main.hs, after main'
 
 NOTE: 11/6/21 So far the Alex lexer introduces `mtl` and `array` as dependencies.
 Currently Lexer.x uses GHC.err error.
 
-\begin{code}
+```haskell
 
 runPrompt :: IO ()
 runPrompt = do
@@ -57,10 +57,10 @@ runPrompt = do
 run :: String -> IO ()
 run source = forM_ (scanTokens source) (\token -> putStrLn $ show token)
 
-\end{code}
+```
 Source File: app/main.hs, after runFile'
 
-4.1.1 - Error Handling
+#### [4.1.1 - Error Handling](https://craftinginterpreters.com/scanning.html#error-handling)
 
 NOTE: first instance of global state is hadError.
 
@@ -88,7 +88,7 @@ scanTokens s = case (runExcept (scanTokens' s)) of
 ```
 Source File: src/Patrus/Lexer.x, Line 38
 
-4.2 - Lexems and Tokens
+### [4.2 - Lexemes and Tokens](https://craftinginterpreters.com/scanning.html#lexemes-and-tokens)
 
 ```lox
 var language = "lox";
@@ -133,11 +133,7 @@ From the [Alex docs](https://www.haskell.org/alex/doc/html/wrappers.html#id46235
 
 Note: Skipping toString() for now and just using the Show instance.
 
-4.4 Scanner Class
-
-TODO make sure EOF gets lexed.
-
-4.5 Recognizing Lexems
+### [4.5 Recognizing Lexemes](https://craftinginterpreters.com/scanning.html#recognizing-lexemes)
 
 ```alex
 {
@@ -180,11 +176,11 @@ tokens :-
 ```
 Source File: src/Patrus/Lexer.x, start of file before TSingleChar datatype declaration.
 
-4.5.1 - Lexical errors
+#### [4.5.1 - Lexical errors](https://craftinginterpreters.com/scanning.html#lexical-errors)
 
 See 4.1.1 notes
 
-4.5.2 - Operators
+#### [4.5.2 - Operators](https://craftinginterpreters.com/scanning.html#operators)
 
 ```alex
     -- Operators
@@ -199,12 +195,9 @@ See 4.1.1 notes
 ```
 Source File: src/Patrus/Lexer.x, line 39 after symbols block.
 
-4.6 - Longer Lexemes
+### [4.6 - Longer Lexemes](https://craftinginterpreters.com/scanning.html#longer-lexemes)
 
 Note: Alex handles this slash handling for us already.
-
-TODO fix EOF handling incase parser needs it.
-TODO check how jlox lexes "\0" vs "+".
 
 So far it should be able to handle code like this.
 
@@ -214,14 +207,11 @@ So far it should be able to handle code like this.
 !*+-/=<> <= == // operators
 ```
 
-4.6.1 - String Literals
+#### [4.6.1 - String Literals](https://craftinginterpreters.com/scanning.html#string-literals)
 
 NOTE: "For no particular reason, Lox supports multi-line strings."
 
 NOTE: "Finally, the last interesting bit is that when we create the token, we also produce the actual string value that will be used later by the interpreter. Here, that conversion only requires a substring() to strip off the surrounding quotes. If Lox supported escape sequences like \n, we’d unescape those here."
-
-TODO unterminated string error.
-TODO multiline string lexing
 
 For now we'll use this.
 ```alex
@@ -230,7 +220,7 @@ For now we'll use this.
 ```
 Source File: src/Patrus/Lexer.x, Line 50 after operators regular expressions
 
-4.6.2 - Number literals
+#### [4.6.2 - Number literals](https://craftinginterpreters.com/scanning.html#number-literals)
 
 ```alex
     $digit+             { \p s -> TNumberLiteral s p }
@@ -238,7 +228,7 @@ Source File: src/Patrus/Lexer.x, Line 50 after operators regular expressions
 ```
 Source File: src/Patrus/Lexer.x, Line 54 after string literal regular expression.
 
-4.7 - Reserved Words and Identifiers
+### [4.7 - Reserved Words and Identifiers](https://craftinginterpreters.com/scanning.html#reserved-words-and-identifiers)
 
 We'll add an alpha numeric macro to make this next bit easier.
 
@@ -279,9 +269,9 @@ TODO: write a test show casing this behavior.
 
 NOTE: "Our interpreter uses Java’s Double type to represent numbers"
 
-5.1.3
+## [5 - Representing Code](https://craftinginterpreters.com/representing-code.html)
 
-Lox's Grammar
+#### [5.1.3 - A Grammar for Lox expressions](https://craftinginterpreters.com/representing-code.html#a-grammar-for-lox-expressions)
 
 ```
 expression     → literal
@@ -297,7 +287,7 @@ operator       → "==" | "!=" | "<" | "<=" | ">" | ">="
                | "+"  | "-"  | "*" | "/" ;
 ```
 
-5.2 - Implementing Syntax Trees
+### [5.2 - Implementing Syntax Trees](https://craftinginterpreters.com/representing-code.html#implementing-syntax-trees)
 
 Untyped Expr example.
 
@@ -320,7 +310,7 @@ data Expr = BOp BinOp Expr Expr
 ```
 Source File: src/Patrus/AST.hs, create new file
 
-5.2.2 - Metaprogramming the trees
+#### [5.2.2 - Metaprogramming the trees](https://craftinginterpreters.com/representing-code.html#metaprogramming-the-trees)
 
 "Java can express behavior-less classes, but I wouldn’t say that it’s particularly great at it. Eleven lines of code to stuff three fields in an object is pretty tedious, and when we’re all done, we’re going to have 21 of these classes."
 
@@ -328,11 +318,11 @@ YIKES.
 
 "[Appendix II](https://craftinginterpreters.com/appendix-ii.html) contains the code generated by this script once we’ve finished implementing jlox and defined all of its syntax tree nodes."
 
-5.3.2 - The Visitor Pattern
+#### [5.3.2 - The Visitor Pattern](https://craftinginterpreters.com/representing-code.html#the-visitor-pattern)
 
 YIKES.
 
-5.4 - A (Not Very) Pretty Printer
+#### [5.4 - A (Not Very) Pretty Printer](https://craftinginterpreters.com/representing-code.html#a-not-very-pretty-printer)
 
 ```haskell
 wrapParens :: String -> String
@@ -386,7 +376,7 @@ main = do
 -- (* (- 123) (group 45.67))
 ```
 
-# 6 - Parsing Expressions
+# [6 - Parsing Expressions](https://craftinginterpreters.com/parsing-expressions.html)
 
 ```
 6 / 3 - 1
@@ -503,7 +493,7 @@ primary     -> NUMBER | STRING | "true" | "false" | "nil"
 
 Unary being right recursive handles nesting like !!true. Precedence of primary prevents it from not terminating.
 
---TODO look at the appendix grammar
+### [6.2.1 - The parser ~~class~~](https://craftinginterpreters.com/parsing-expressions.html#the-parser-class)
 
 Begin the parser by copying over token definitions from Lexer.x
 
@@ -753,7 +743,7 @@ BOp Div (Lit (NumberLit 6.0)) (Group (BOp Minus (Lit (NumberLit 3.0)) (Lit (Numb
 
 The rules parse as we'd like.
 
--- 6.3 Syntax Errors
+### [6.3 - Syntax Errors](https://craftinginterpreters.com/parsing-expressions.html#syntax-errors)
 
 Happy has an error token and partial directive.
 
@@ -771,7 +761,7 @@ NOTE: "Alas, we don’t get to see this method in action, since we don’t have 
 
 So using parseExpression' :: String -> Either String [Expr] to handle errors will be nice enough for now.
 
--- 7 - Evaluating Expressions
+## [7 - Evaluating Expressions](https://craftinginterpreters.com/evaluating-expressions.html)
 
 NOTE: Lift the PrettyPrinting code out to its own module, src/Patrus/AST/PrettyPrinter.
 NOTE: A lot of refactoring goes on in this section to make dynamic typechecking during eval simpler.

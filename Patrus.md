@@ -774,7 +774,189 @@ So using parseExpression' :: String -> Either String [Expr] to handle errors wil
 -- 7 - Evaluating Expressions
 
 NOTE: Lift the PrettyPrinting code out to its own module, src/Patrus/AST/PrettyPrinter.
-
 NOTE: A lot of refactoring goes on in this section to make dynamic typechecking during eval simpler.
 
-Wow this book leverages a lot of Java's semmantics during typechecking.
+--Wow this book leverages a lot of Java's semmantics during typechecking.
+
+For the sake of readability we'll split BinOp into:
+
+```haskell
+
+data Cmp = EQ | NEQ | LT | LTE | GT | GTE
+    deriving Show
+
+data BinOp = Cmp ComparrisonOP
+           | Plus | Minus | Mul | Div
+    deriving Show
+```
+Source File: src/Patrus/AST.hs after includes
+
+Changes to the parser and to the pretty printer should be made to accomodate this.
+
+As evaluating an expression may fail due to dynamic typing we'll use the Either type and a new error type.
+
+```haskell
+data Error = BOPTyMismatch String
+           | UOPTyMismatch String
+    deriving Show
+
+bopTyMismatch = BOPTyMismatch "Operands must be numbers."
+plusTyMismatch = BOPTyMismatch "Operands must be two numbers or two strings."
+```
+Source File: src/Patrus/AST.hs after Expr data declaration.
+
+As plus has its own special error message we have a generic one and specialized one.
+
+To make our evaluation function eval simple we can split it into three parts.
+
+- Trivially evaluatable patterns
+- "Truthy" patterns
+- Trivial operations
+- Dynamic Type Checking
+
+### Trivially evaluatable patterns
+
+```haskell
+data Expr = BOp BinOp Expr Expr
+          | UOp UnaryOp Expr
+          | Lit Literal
+          | Group Expr
+     deriving Show
+```
+
+When given an Expr to evaluate the simplest constructors to handle are Lit and Group.
+
+Right will contain the evaluated expression (reduced down to a literal). Left will contain any errors.
+
+```haskell
+eval :: Expr -> Either Error Expr
+eval e@(Lit _) = Right e
+eval (Group e) = eval e
+```
+
+Lit is already evaluated so we just return it. With group theres simply no other sensible action to take than evaluate the contained expression. Next up we'll deal with UOp Negate, which is the first instance of handling evaluation failure.
+
+```haskell
+eval (UOp Negate e) = case eval e of
+                        Right (Lit (NumberLit x)) -> Right $ Lit $ NumberLit (-x)
+                        _ -> Left $ UOPTyMismatch "Operand must be a number."
+```
+
+We're negating some expression, which could be a non-negatable expression and fail, so we recurse on e and then pattern match to see if it did fail. We'll see this pattern again when handling binary operations.
+
+### "Truthy" patterns
+
+Truthy operations, EQ and NEQ, explicitly have different type checking rules than the numeric operations and string concat. Therefore its easier to handle them seperately. This keeps the dynamic type checking for binary operations straightforward as well.
+
+```haskell
+eval (UOp Not e) = evalNotTruth e
+eval (BOp (Cmp EQ) e1 e2) = evalTruth EQ (eval e1) (eval e2)
+eval (BOp (Cmp NEQ) e1 e2) = evalTruthy NEQ (eval e1) (eval e2)
+```
+
+### Trivial Operations
+
+Similar to how we handled bare literals and groups, any binary operation directly on correct literals can be handled in a straightforward way with pattern matching.
+
+```haskell
+eval (BOp (Cmp LT)  (Lit (BoolLit a)) (Lit (BoolLit b)))   = Right $ Lit $ BoolLit $ a < b
+eval (BOp (Cmp LTE) (Lit (BoolLit a)) (Lit (BoolLit b)))   = Right $ Lit $ BoolLit $ a <= b
+eval (BOp (Cmp GT)  (Lit (BoolLit a)) (Lit (BoolLit b)))   = Right $ Lit $ BoolLit $ a > b
+eval (BOp (Cmp GTE) (Lit (BoolLit a)) (Lit (BoolLit b)))   = Right $ Lit $ BoolLit $ a >= b
+
+eval (BOp Plus  (Lit (StringLit s1)) (Lit (StringLit s2))) = Right $ Lit $ StringLit (s1 <> s2)
+
+eval (BOp Plus  (Lit (NumberLit x)) (Lit (NumberLit y)))   = Right $ Lit $ NumberLit (x + y)
+eval (BOp Minus (Lit (NumberLit x)) (Lit (NumberLit y)))   = Right $ Lit $ NumberLit (x - y)
+eval (BOp Mul   (Lit (NumberLit x)) (Lit (NumberLit y)))   = Right $ Lit $ NumberLit (x * y)
+eval (BOp Div   (Lit (NumberLit x)) (Lit (NumberLit y)))   = Right $ Lit $ NumberLit (x / y)
+```
+
+On the RHS we use Haskell's num and monoid operators to evaluate the operations.
+
+### Dynamic Type Checking
+
+Now we've exhausted all the straightfoward buisness of matching on obviously correct cases. With truthy cases out of the way we just need to evaluate any subexpressions for a binary operation and perform strict type matching.
+
+literalBopTyMatch handles this for us and returns an `Either Error (Expr, Expr) to destructure in the eval body for convinent re-evaling of two literal expressions. This way we can reuse patterns above and just contain this typechecking logic in these 11 lines.
+
+```haskell
+-- Sub expressions need to be evaluated and type mismatches should be handled.
+eval (BOp operator e1 e2) = case literalBopTyMatch (eval e1) (eval e2) of
+                                Left _ -> case operator of
+                                            Plus -> Left plusTyMismatch
+                                            _ ->    Left bopTyMismatch
+
+                                Right (e1',e2') -> eval (BOp operator e1' e2')
+
+
+-- Performs strict type matching for PLUS/MINUS/DIV/MUL/LT/LTE/GT/GTE
+-- Nil in any operand causes an error, EQ and NEQ should be handled earlier.
+literalBopTyMatch :: Either Error Expr -> Either Error Expr -> Either Error (Expr,Expr)
+literalBopTyMatch (Left err) _ = Left err
+literalBopTyMatch _ (Left err) = Left err
+literalBopTyMatch (Right e1@(Lit (NumberLit _))) (Right e2@(Lit (NumberLit _))) = Right (e1,e2)
+literalBopTyMatch (Right e1@(Lit (StringLit _))) (Right e2@(Lit (StringLit _))) = Right (e1,e2)
+literalBopTyMatch (Right e1@(Lit (BoolLit _ ))) (Right e2@(Lit (BoolLit _ ))) = Right (e1, e2)
+literalBopTyMatch _ _ = Left bopTyMismatch
+```
+
+### Truthy helpers
+
+Returning to the work done on the truthy patterns, here are the functions used there.
+
+```haskell
+evalTruthy :: ComparrisonOp -> Either Error Expr -> Either Error Expr -> Either Error Expr
+evalTruthy _ err@(Left _) _ = err
+evalTruthy _ _ err@(Left _) = err
+evalTruthy EQ (Right (Lit a)) (Right (Lit b)) = Right $ Lit $ BoolLit $ literalTruth a == literalTruth b
+evalTruthy NEQ (Right (Lit a)) (Right (Lit b)) = Right $ Lit $ BoolLit $ literalTruth a /= literalTruth b
+
+evalNotTruthy :: Expr -> Either Error Expr
+evalNotTruthy e = case eval e of
+                    Left err -> Left err                                        --A subexpression failed to eval
+                    Right (Lit (BoolLit b)) -> Right $ Lit $ BoolLit (not b)    --Bools are bools
+                    Right (Lit Nil) -> Right $ Lit $ BoolLit True               --Nil is falsy
+                    Right e -> Right $ Lit $ BoolLit False                      --Every else is truthy
+
+literalTruth :: Literal -> Bool
+literalTruth Nil = False
+literalTruth (BoolLit False) = False
+literalTruth _ = True
+```
+
+### Wrapup
+
+Nowe we can `eval $ parseExpression "..."` valid expressions to make sure this works. Any runtime type errors will result in a Left, any valid expressions with result in a Right.
+
+One thing to note before getting into chapter 8 is this pure evaluation scheme will need to change to support assignment expressions.
+
+For example these following program are valid and have a certain order of effects.
+
+```lox
+var x = 0;
+var z = ((x = 2) < (x = 5));
+print x;
+//5
+```
+
+
+```lox
+var x = 0;
+var z = ((x = 1) == (x = 2) == ((x == 3) == (x == 4)));
+print x;
+//2
+```
+
+```lox
+var x = 0;
+var z = ((x = 1) == (x = 2)) == ((x = 3) == (x = 4));
+print x;
+//4
+```
+
+This specific behavior is noted in 7.2.5 - Evaluating binary operators
+
+"Did you notice we pinned down a subtle corner of the language semantics here? In a binary expression, we evaluate the operands in left-to-right order. If those operands have side effects, that choice is user visible, so this isn’t simply an implementation detail.
+
+If we want our two interpreters to be consistent (hint: we do), we’ll need to make sure clox does the same thing."

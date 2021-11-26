@@ -13,26 +13,26 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
 
 ## Feature List
 
-- [ ] Primitives
-    - [ ] Booleans
-    - [ ] Double-Precision Floats
-    - [ ] Integers
-    - [ ] Strings
-    - [ ] Nil
-- [ ] Expressions
-    - [ ] Arithmetic
-        - [ ] Add
-        - [ ] Subtract
-        - [ ] Multiply
-        - [ ] Divide
-        - [ ] Negate
-    - [ ] String Concatenation
-    - [ ] Comparison
-        - [ ] LT
-        - [ ] LTE
-        - [ ] GT
-        - [ ] GTE
-    - [ ] Equality
+- [x] Primitives
+    - [x] Booleans
+    - [x] Double-Precision Floats
+    - [x] Integers
+    - [x] Strings
+    - [x] Nil
+- [x] Expressions
+    - [x] Arithmetic
+        - [x] Add
+        - [x] Subtract
+        - [x] Multiply
+        - [x] Divide
+        - [x] Negate
+    - [x] String Concatenation
+    - [x] Comparison
+        - [x] LT
+        - [x] LTE
+        - [x] GT
+        - [x] GTE
+    - [x] Equality
     - [ ] Logical Operators
         - [ ] And
         - [ ] Or

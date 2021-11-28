@@ -950,3 +950,8 @@ This specific behavior is noted in 7.2.5 - Evaluating binary operators
 "Did you notice we pinned down a subtle corner of the language semantics here? In a binary expression, we evaluate the operands in left-to-right order. If those operands have side effects, that choice is user visible, so this isn’t simply an implementation detail.
 
 If we want our two interpreters to be consistent (hint: we do), we’ll need to make sure clox does the same thing."
+
+## Modifying the parser for error handling
+
+TODO fix parse error on "3 + (3 + 4 + 5)"
+TODO backport 28fcefa, 224516b changes to notes

@@ -73,10 +73,14 @@ eval (BOp operator e1 e2) = case literalBopTyMatch (eval e1) (eval e2) of
 literalBopTyMatch :: Either Error Expr -> Either Error Expr -> Either Error (Expr,Expr)
 literalBopTyMatch (Left err) _ = Left err
 literalBopTyMatch _ (Left err) = Left err
-literalBopTyMatch (Right e1@(Lit (NumberLit _))) (Right e2@(Lit (NumberLit _))) = Right (e1,e2)
-literalBopTyMatch (Right e1@(Lit (StringLit _))) (Right e2@(Lit (StringLit _))) = Right (e1,e2)
-literalBopTyMatch (Right e1@(Lit (BoolLit _ ))) (Right e2@(Lit (BoolLit _ ))) = Right (e1, e2)
-literalBopTyMatch _ _ = Left bopTyMismatch
+literalBopTyMatch (Right e1) (Right e2) | sameLitType e1 e2 = Right (e1,e2)
+                                        | otherwise = Left bopTyMismatch
+
+sameLitType :: Expr -> Expr -> Bool
+sameLitType (Lit (NumberLit _)) (Lit (NumberLit _)) = True
+sameLitType (Lit (StringLit _)) (Lit (StringLit _)) = True
+sameLitType (Lit (BoolLit _)) (Lit (BoolLit _)) = True
+sameLitType _ _ = False
 
 evalTruthy :: ComparrisonOp -> Either Error Expr -> Either Error Expr -> Either Error Expr
 evalTruthy _ err@(Left _) _ = err

@@ -1,7 +1,8 @@
 {
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-module Patrus.Parser where
+module Patrus.Parser
+    (parseExpression, parseExpression') where
 
 import Control.Monad.Except
 import Control.Exception

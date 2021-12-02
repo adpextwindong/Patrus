@@ -953,5 +953,4 @@ If we want our two interpreters to be consistent (hint: we do), we’ll need to 
 
 ## Modifying the parser for error handling
 
-TODO fix parse error on "3 + (3 + 4 + 5)"
 TODO backport 28fcefa, 224516b changes to notes

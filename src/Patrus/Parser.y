@@ -91,8 +91,8 @@ Comparison : Term GREATER Term                  { BOp (Cmp AST.GT) $1 $3 }
            | Term LESS_EQUAL Term               { BOp (Cmp AST.LTE) $1 $3 }
            | Term                               { $1 }
 
-Term : Factor MINUS Factor                      { BOp Minus $1 $3 }
-     | Factor PLUS Factor                       { BOp Plus $1 $3 }
+Term : Term MINUS Factor                        { BOp Minus $1 $3 }
+     | Term PLUS Factor                         { BOp Plus $1 $3 }
      | Factor                                   { $1 }
 
 Factor : Unary SLASH Unary                      { BOp Div $1 $3 }

@@ -5,6 +5,12 @@ import Debug.Trace
 import GHC.Float
 import Prelude hiding (EQ,LT,GT)
 
+type Program = [Statement]
+
+data Statement = ExprStatement Expr
+               | PrintStatement Expr
+               deriving Show
+
 data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE
     deriving Show
 
@@ -106,3 +112,13 @@ literalTruth :: Expr -> Bool
 literalTruth (Lit Nil) = False
 literalTruth (Lit (BoolLit False)) = False
 literalTruth _ = True
+
+interpret :: Program -> IO ()
+interpret ((PrintStatement e):xs) = do
+    case eval e of
+        Left e' -> putStrLn $ "INTERPRET " <> show e' --TODO pretty print
+        Right val -> putStrLn (show val) >> interpret xs
+interpret ((ExprStatement e):xs) = do
+    --TODO port eval to some state containing monad
+    interpret xs
+interpret [] = return ()

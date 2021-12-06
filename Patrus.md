@@ -954,3 +954,9 @@ If we want our two interpreters to be consistent (hint: we do), we’ll need to 
 ## Modifying the parser for error handling
 
 TODO backport 28fcefa, 224516b changes to notes
+
+## [8 - Statements and State](https://craftinginterpreters.com/statements-and-state.html)
+
+TODO parse error handling for missing semicolon
+    "Expect ';' after expression."
+    "Expect ';' after value."

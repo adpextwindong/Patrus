@@ -2,7 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 module Patrus.Parser
-    (parseExpression, parseExpression') where
+    (parseProgram, parseProgram') where
 
 import Control.Monad.Except
 import Control.Exception
@@ -14,7 +14,7 @@ import Patrus.AST as AST
 
 --Entry Point
 
-%name expressionParse
+%name statementsParse
 
 %tokentype { Token }
 
@@ -76,33 +76,52 @@ import Patrus.AST as AST
 
 -- Production Rules
 
---Hack around TEOF
-TopLevel : Expr TEOF { $1 }
+Program :: { Program }
+Program : Statements TEOF { $1 }
 
+Statements :: { [Statement] }
+Statements : Statements Statement { $2 : $1 }
+           | {- empty -} { [] }
+
+Statement :: { Statement }
+Statement : ExprStatement { $1 }
+          | PrintStatement { $1 }
+
+ExprStatement : Expr SEMICOLON                            { ExprStatement $1 }
+
+PrintStatement : PRINT Expr SEMICOLON                     { PrintStatement $2 }
+
+Expr :: { Expr }
 Expr : Equality { $1 }
 
+Equality :: { Expr }
 Equality : Comparison BANG_EQUAL Equality       { BOp (Cmp NEQ) $1 $3 }
          | Comparison EQUAL_EQUAL Equality      { BOp (Cmp AST.EQ) $1 $3 }
          | Comparison                           { $1 }
 
+Comparison :: { Expr }
 Comparison : Term GREATER Term                  { BOp (Cmp AST.GT) $1 $3 }
            | Term GREATER_EQUAL Term            { BOp (Cmp AST.GTE) $1 $3 }
            | Term LESS Term                     { BOp (Cmp AST.LT) $1 $3 }
            | Term LESS_EQUAL Term               { BOp (Cmp AST.LTE) $1 $3 }
            | Term                               { $1 }
 
-Term : Term MINUS Factor                        { BOp Minus $1 $3 }
-     | Term PLUS Factor                         { BOp Plus $1 $3 }
+Term :: { Expr }
+Term : Factor MINUS Factor                      { BOp Minus $1 $3 }
+     | Factor PLUS Factor                       { BOp Plus $1 $3 }
      | Factor                                   { $1 }
 
+Factor :: { Expr }
 Factor : Unary SLASH Unary                      { BOp Div $1 $3 }
        | Unary STAR Unary                       { BOp Mul $1 $3 }
        | Unary                                  { $1 }
 
+Unary :: { Expr }
 Unary : BANG Unary                              { UOp Not $2 }
       | MINUS Unary                             { UOp Negate $2 }
       | Primary                                 { $1 }
 
+Primary :: { Expr }
 Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit (StringLit s)) $1 }
         | TNumberLiteral                        { (\(TNumberLiteral s _) -> Lit (NumberLit (read s))) $1 }
         | TRUE                                  { Lit (BoolLit True) }
@@ -116,12 +135,11 @@ parseError :: [Token] -> Except String a
 parseError (l:ls) = throwError (show l)
 parseError []     = throwError "Unexpected end of Input"
 
-parseExpression :: String -> Expr
-parseExpression s = case parseExpression' s of
-                Left msg -> error ("parse error:" ++ msg)
-                Right e -> e
+parseProgram :: String -> Program
+parseProgram s = case parseProgram' s of
+    Left msg -> error ("Program parse error:" ++ msg)
+    Right p -> reverse p
 
-parseExpression' input = runExcept $ do
-    expressionParse (scanTokens input)
-
+parseProgram' input = runExcept $ do
+    statementsParse (scanTokens input)
 }

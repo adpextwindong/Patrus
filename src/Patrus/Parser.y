@@ -77,11 +77,19 @@ import Patrus.AST as AST
 -- Production Rules
 
 Program :: { Program }
-Program : Statements TEOF { $1 }
+Program : Declarations TEOF { $1 }
 
-Statements :: { [Statement] }
-Statements : Statements Statement { $2 : $1 }
+Declarations :: { [Statement] }
+Declarations : Declarations Declaration { $2 : $1 }
            | {- empty -} { [] }
+
+Declaration :: { Statement }
+Declaration : VarDecl                   { $1 }
+            | Statement                 { $1 }
+
+VarDecl :: {Statement }
+VarDecl : VAR TIdentifier EQUAL Expr SEMICOLON            { (\(TIdentifier s _) e -> VarDeclaration s (Just e)) $2 $4 }
+        | VAR TIdentifier SEMICOLON                       { (\(TIdentifier s _) -> VarDeclaration s Nothing) $2 }
 
 Statement :: { Statement }
 Statement : ExprStatement { $1 }
@@ -128,6 +136,7 @@ Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit 
         | FALSE                                 { Lit (BoolLit False) }
         | NIL                                   { Lit Nil }
         | LEFT_PAREN Expr RIGHT_PAREN           { Group $2 }
+        | TIdentifier                           { (\(TIdentifier s _) -> Var s) $1 }
 
 {
 

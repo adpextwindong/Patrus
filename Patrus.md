@@ -960,3 +960,61 @@ TODO backport 28fcefa, 224516b changes to notes
 TODO parse error handling for missing semicolon
     "Expect ';' after expression."
     "Expect ';' after value."
+
+### [8.2 - Global Variables](https://craftinginterpretes-and-state.htmlrs.com/statement#global-variables)
+
+```haskell
+type Program = [Statement]
+type Identifier = String
+
+data Statement = ExprStatement Expr
+                | PrintStatement Expr
+                | VarDeclaration Identifier (Maybe Expr)
+                deriving Show
+
+data Expr = BOp BinOp Expr Expr
+           | UOp UnaryOp Expr
+           | Lit Literal
+           | Group Expr
+           | Var Identifier
+             deriving Show
+```
+Source File: src/Patrus/AST.hs
+
+```haskell
+Program :: { Program }
+Program : Declarations TEOF { $1 }
+
+Declarations :: { [Statement] }
+Declarations : Declarations Declaration { $2 : $1 }
+            | {- empty -} { [] }
+
+Declaration :: { Statement }
+Declaration : VarDecl                   { $1 }
+            | Statement                 { $1 }
+
+VarDecl :: {Statement }
+VarDecl : VAR TIdentifier EQUAL Expr SEMICOLON            { (\(TIdentifier s _) e -> VarDeclaration s (Just e)) $2 $4 }
+        | VAR TIdentifier SEMICOLON                       { (\(TIdentifier s _) -> VarDeclaration s Nothing) $2 }
+
+Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit
+         | FALSE                                 { Lit (BoolLit False) }
+         | NIL                                   { Lit Nil }
+         | LEFT_PAREN Expr RIGHT_PAREN           { Group $2 }
+         | TIdentifier                           { (\(TIdentifier s _) -> Var s) $1 }
+```
+Source File: src/Patrus/Parser.y
+
+This program is now parsable.
+
+```lox
+var foo = 5;
+print foo;
+var bar;
+```
+
+And gives us this AST.
+
+```
+[VarDeclaration "foo" (Just (Lit (NumberLit 5.0))), PrintStatement (Var "foo"), VarDeclaration "bar" Nothing]
+```

@@ -6,9 +6,11 @@ import GHC.Float
 import Prelude hiding (EQ,LT,GT)
 
 type Program = [Statement]
+type Identifier = String
 
 data Statement = ExprStatement Expr
                | PrintStatement Expr
+               | VarDeclaration Identifier (Maybe Expr)
                deriving Show
 
 data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE
@@ -31,6 +33,7 @@ data Expr = BOp BinOp Expr Expr
           | UOp UnaryOp Expr
           | Lit Literal
           | Group Expr
+          | Var Identifier
             deriving Show
 
 data Error = BOPTyMismatch String

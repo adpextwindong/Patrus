@@ -26,6 +26,8 @@ library
     build-depends:  base >= 4.13.0.0
                    --Lexer deps
                    ,array >= 0.5.4.0
+                   ,unordered-containers
+                   ,transformers
                    ,mtl >= 2.2.2
     exposed-modules:
         Patrus.Parser

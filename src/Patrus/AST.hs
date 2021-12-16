@@ -1,9 +1,17 @@
 {-# LANGUAGE DoAndIfThenElse #-}
+{-# LANGUAGE DerivingStrategies #-}         --EvalM
+{-# LANGUAGE GeneralizedNewtypeDeriving #-} --EvalM
 module Patrus.AST where
 
 import Debug.Trace
 import GHC.Float
 import Prelude hiding (EQ,LT,GT)
+
+                                                    --EvalM imports
+import Control.Monad.IO.Class
+import Control.Monad.State.Class (MonadState (..))
+import Control.Monad.Trans.State (StateT)
+import qualified Data.HashMap.Strict as HM
 
 type Program = [Statement]
 type Identifier = String
@@ -116,12 +124,29 @@ literalTruth (Lit Nil) = False
 literalTruth (Lit (BoolLit False)) = False
 literalTruth _ = True
 
-interpret :: Program -> IO ()
-interpret ((PrintStatement e):xs) = do
+interpretIO :: Program -> IO ()
+interpretIO ((PrintStatement e):xs) = do
     case eval e of
         Left e' -> putStrLn $ "INTERPRET " <> show e' --TODO pretty print
-        Right val -> putStrLn (show val) >> interpret xs
-interpret ((ExprStatement e):xs) = do
+        Right val -> putStrLn (show val) >> interpretIO xs
+interpretIO ((ExprStatement e):xs) = do
     --TODO port eval to some state containing monad
-    interpret xs
-interpret [] = return ()
+    interpretIO xs
+interpretIO [] = return ()
+
+--Literal might conflict with first class functions
+type Environment = HM.HashMap Identifier Literal
+
+runtimeVarError :: Identifier -> String
+runtimeVarError identifier = "Undefined variable '" <> identifier <> "'."
+
+--Global variables can be redefined
+
+--like Intrigue's EvalM but with StateT
+newtype EvalM a = EvalM { runEval :: StateT Environment IO a }
+  deriving newtype ( Functor
+                   , Applicative
+                   , Monad
+                   , MonadState Environment
+                   , MonadIO
+                   )

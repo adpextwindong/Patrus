@@ -1018,3 +1018,35 @@ And gives us this AST.
 ```
 [VarDeclaration "foo" (Just (Lit (NumberLit 5.0))), PrintStatement (Var "foo"), VarDeclaration "bar" Nothing]
 ```
+## [8.3 - Environments](https://craftinginterpreters.com/statements-and-state.html#environments)
+
+TODO commit bc00f2f
+
+Now we have simple global variables where we can do this.
+
+```haskell
+ interpretProgram $ parseProgram "var foo = 5; var foo = 10; print foo;"
+"PRINT: Lit (NumberLit 10.0)"
+fromList [("foo",Lit (NumberLit 10.0))]
+```
+
+Evaluating an undefined variable in the environment leads to this kind of error:
+
+```haskell
+interpretProgram $ parseProgram "print foo;"
+*** Exception: user error (Undefined variable 'foo'.)
+```
+
+### 8.3.1
+
+TODO commit bc00f2f
+
+```haskell
+interpretProgram $ parseProgram "var a = 1; var b = 2; print a + b;"
+"PRINT: Lit (NumberLit 3.0)"
+fromList [("a",Lit (NumberLit 1.0)),("b",Lit (NumberLit 2.0))]
+```
+
+## [8.4 - Assignment](https://craftinginterpreters.com/statements-and-state.html#assignment)
+
+TODO

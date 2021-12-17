@@ -100,7 +100,11 @@ ExprStatement : Expr SEMICOLON                            { ExprStatement $1 }
 PrintStatement : PRINT Expr SEMICOLON                     { PrintStatement $2 }
 
 Expr :: { Expr }
-Expr : Equality { $1 }
+Expr : Assignment                               { $1 }
+
+Assignment :: { Expr }
+Assignment : TIdentifier EQUAL Assignment       { (\(TIdentifier s _) -> Assignment s $3 ) $1 }
+           | Equality                           { $1 }
 
 Equality :: { Expr }
 Equality : Comparison BANG_EQUAL Equality       { BOp (Cmp NEQ) $1 $3 }

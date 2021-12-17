@@ -42,6 +42,7 @@ data Expr = BOp BinOp Expr Expr
           | Lit Literal
           | Group Expr
           | Var Identifier
+          | Assignment Identifier Expr
             deriving Show
 
 uopTyMismatch = "Operand must be a number."
@@ -59,6 +60,12 @@ eval (Var i) = do
     case M.lookup i env of
         Nothing -> fail $ runtimeVarError i
         Just v -> return v
+
+eval (Assignment i e) = do
+   e' <- eval e
+   env <- get
+   put $ M.insert i e' env
+   return e'
 
 eval (Group e) = eval e
 eval (UOp Negate e) = do

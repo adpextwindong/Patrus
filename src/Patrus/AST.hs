@@ -56,15 +56,15 @@ eval :: Expr -> EvalM Expr
 eval e@(Lit _) = return e
 eval (Var i) = do
     env <- get
-    --TODO finish var lookup for global flatenv
+    --TODO lexical scoping
     case M.lookup i env of
         Nothing -> fail $ runtimeVarError i
         Just v -> return v
 
 eval (Assignment i e) = do
    e' <- eval e
-   env <- get
-   put $ M.insert i e' env
+   --TODO lexical scoping
+   modifyEnv $ M.insert i e'
    return e'
 
 eval (Group e) = eval e
@@ -163,9 +163,6 @@ emptyEnv = M.empty
 runEvalM :: EvalM Expr -> Environment -> IO (Expr, Environment)
 runEvalM x = runStateT (runEval x)
 
---interpretM :: EvalM Program -> Environment -> IO Environment
---interpretM x env = execStateT (runEval x) env
-
 interpretM :: Program -> EvalM Program
 interpretM [] = return []
 interpretM ((PrintStatement e): xs) = do
@@ -177,20 +174,17 @@ interpretM ((ExprStatement e) : xs) = do
     interpretM xs
 
 interpretM ((VarDeclaration i Nothing) : xs) = do
-    env <- get
-    let e = Lit Nil
-    let env' = M.insert i e env
-    put env'
-    --TODO rewrite with modify
+    --TODO lexical scoping
+    modifyEnv $ M.insert i (Lit Nil)
     interpretM xs
 
 interpretM (VarDeclaration i (Just e) : xs) = do
     e' <- eval e
-    --TODO rewrite with modify
-    env <- get
-    let env' = M.insert i e' env
-    put env'
+    --TODO lexical scoping
+    modifyEnv (M.insert i e')
     interpretM xs
+
+modifyEnv f = get >>= (put . f)
 
 interpretProgram :: Program -> IO Environment
 interpretProgram p = execStateT (runEval $ interpretM p) emptyEnv

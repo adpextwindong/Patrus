@@ -1049,4 +1049,33 @@ fromList [("a",Lit (NumberLit 1.0)),("b",Lit (NumberLit 2.0))]
 
 ## [8.4 - Assignment](https://craftinginterpreters.com/statements-and-state.html#assignment)
 
-TODO
+### [8.4.1 - Assignment syntax](https://craftinginterpreters.com/statements-and-state.html#assignment-syntax)
+
+TODO 7a75bca
+```
+interpretProgram $ parseProgram "var a = 1; var b = 2; a = 5; print a + b;"
+"PRINT: Lit (NumberLit 7.0)"
+fromList [("a",Lit (NumberLit 5.0)),("b",Lit (NumberLit 2.0))]
+```
+
+In jlox we can see that assigments will evaluate to the assigned value and perform the assignment effect.
+
+```jlox
+> var foo = 5; print (foo = 3);
+3
+```
+
+## [8.4.2 - Assignment Semantics](https://craftinginterpreters.com/statements-and-state.html#assignment-semantics)
+
+TODO 7a45bca
+
+NOTE: The rvalue gets fully evaluated before assignment can have a chance to fail. This can be seen in jlox by assigning an undeclared variable with an assignment expression result.
+
+```jlox
+> var foo = 5;
+> baz = (foo = 4);
+Undefined variable 'baz'.
+[line 1]
+> print foo;
+4
+```

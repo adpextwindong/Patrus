@@ -49,6 +49,9 @@ uopTyMismatch = "Operand must be a number."
 bopTyMismatch = "Operands must be numbers."
 plusTyMismatch = "Operands must be two numbers or two strings."
 
+runtimeVarError :: Identifier -> String
+runtimeVarError identifier = "Undefined variable '" <> identifier <> "'."
+
 -- Evaluate the expression or return an error.
 -- All trivial patterns where we can perform the operator are done here.
 -- Type checking and subexpression handling is done elsewhere.
@@ -57,14 +60,14 @@ eval e@(Lit _) = return e
 eval (Var i) = do
     env <- get
     --TODO lexical scoping
-    case M.lookup i env of
+    case lookupEnv i env of
         Nothing -> fail $ runtimeVarError i
         Just v -> return v
 
 eval (Assignment i e) = do
    e' <- eval e
    --TODO lexical scoping
-   modifyEnv $ M.insert i e'
+   modifyEnv $ insertEnv i e'
    return e'
 
 eval (Group e) = eval e
@@ -141,12 +144,21 @@ literalTruth _ = True
 
 --Literal might conflict with first class functions
 --Testing expr for now
-type Environment = M.Map Identifier Expr
+data Environment = Env {
+                       scope :: M.Map Identifier Expr
+                      ,enclosing :: Environment
+                   } | EmptyEnv
 
-runtimeVarError :: Identifier -> String
-runtimeVarError identifier = "Undefined variable '" <> identifier <> "'."
+insertEnv :: Identifier -> Expr -> Environment -> Environment
+insertEnv i e EmptyEnv = Env (M.singleton i e) EmptyEnv
+insertEnv i e (Env scope p) = Env (M.insert i e scope) p
 
---Global variables can be redefined
+lookupEnv :: Identifier -> Environment -> Maybe Expr
+lookupEnv i EmptyEnv = Nothing
+lookupEnv i (Env scope parent) = case M.lookup i scope of
+                                    Just v -> Just v
+                                    Nothing -> lookupEnv i parent
+
 
 --like Intrigue's EvalM but with StateT
 newtype EvalM a = EvalM { runEval :: StateT Environment IO a }
@@ -158,7 +170,6 @@ newtype EvalM a = EvalM { runEval :: StateT Environment IO a }
                    , MonadIO
                    )
 
-emptyEnv = M.empty
 
 runEvalM :: EvalM Expr -> Environment -> IO (Expr, Environment)
 runEvalM x = runStateT (runEval x)
@@ -175,19 +186,20 @@ interpretM ((ExprStatement e) : xs) = do
 
 interpretM ((VarDeclaration i Nothing) : xs) = do
     --TODO lexical scoping
-    modifyEnv $ M.insert i (Lit Nil)
+    modifyEnv $ insertEnv i (Lit Nil)
     interpretM xs
 
 interpretM (VarDeclaration i (Just e) : xs) = do
     e' <- eval e
     --TODO lexical scoping
-    modifyEnv (M.insert i e')
+    modifyEnv (insertEnv i e')
     interpretM xs
 
+modifyEnv :: (Environment -> Environment) -> EvalM ()
 modifyEnv f = get >>= (put . f)
 
 interpretProgram :: Program -> IO Environment
-interpretProgram p = execStateT (runEval $ interpretM p) emptyEnv
+interpretProgram p = execStateT (runEval $ interpretM p) EmptyEnv
 
 --Test expressions
 --pfoo = interpretProgram $ parseProgram "print 5; print 6;"

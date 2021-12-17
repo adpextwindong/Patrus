@@ -10,8 +10,8 @@ import Prelude hiding (EQ,LT,GT)
                                                     --EvalM imports
 import Control.Monad.IO.Class
 import Control.Monad.State.Class (MonadState (..))
-import Control.Monad.Trans.State (StateT)
-import qualified Data.HashMap.Strict as HM
+import Control.Monad.Trans.State (StateT, runStateT, evalStateT, execStateT, modify')
+import qualified Data.Map.Strict as M
 
 type Program = [Statement]
 type Identifier = String
@@ -44,22 +44,29 @@ data Expr = BOp BinOp Expr Expr
           | Var Identifier
             deriving Show
 
-data Error = BOPTyMismatch String
-           | UOPTyMismatch String
-           deriving Show
-
-bopTyMismatch = BOPTyMismatch "Operands must be numbers."
-plusTyMismatch = BOPTyMismatch "Operands must be two numbers or two strings."
+uopTyMismatch = "Operand must be a number."
+bopTyMismatch = "Operands must be numbers."
+plusTyMismatch = "Operands must be two numbers or two strings."
 
 -- Evaluate the expression or return an error.
 -- All trivial patterns where we can perform the operator are done here.
 -- Type checking and subexpression handling is done elsewhere.
-eval :: Expr -> Either Error Expr
+eval :: Expr -> EvalM Expr
 eval e@(Lit _) = return e
+eval (Var i) = do
+    env <- get
+    --TODO finish var lookup for global flatenv
+    case M.lookup i env of
+        Nothing -> fail $ runtimeVarError i
+        Just v -> return v
+
 eval (Group e) = eval e
-eval (UOp Negate e) = case eval e of
-                        Right (Lit (NumberLit x)) -> Right $ Lit $ NumberLit (-x)
-                        _ -> Left $ UOPTyMismatch "Operand must be a number."
+eval (UOp Negate e) = do
+    e' <- eval e
+    case e' of
+        (Lit (NumberLit x)) -> pure $ Lit $ NumberLit (-x)
+        _ -> fail uopTyMismatch
+
 --Dispatch to truthy evals
 eval (UOp Not e) = evalNotTruthy e
 eval (BOp (Cmp EQ) e1 e2) = evalTruthy EQ e1 e2
@@ -87,16 +94,16 @@ evalBop Div (Lit (NumberLit x)) (Lit (NumberLit y))    = Lit $ NumberLit (x / y)
 
 -- | Performs strict type matching for PLUS/MINUS/DIV/MUL/LT/LTE/GT/GTE
 -- Nil in any operand causes an error, EQ and NEQ should be handled earlier.
-literalBopTyMatch :: BinOp -> Expr -> Expr -> Either Error (Expr,Expr)
+literalBopTyMatch :: BinOp -> Expr -> Expr -> EvalM (Expr,Expr)
 literalBopTyMatch operator e1 e2 = do
     e1 <- eval e1
     e2 <- eval e2
     if not $ sameLitType e1 e2
     then case operator of
-            Plus -> Left plusTyMismatch
-            _    -> Left bopTyMismatch
+            Plus -> fail plusTyMismatch
+            _    -> fail bopTyMismatch
     else
-        return (e1,e2)
+        pure (e1,e2)
 
 sameLitType :: Expr -> Expr -> Bool
 sameLitType (Lit (NumberLit _)) (Lit (NumberLit _)) = True
@@ -104,7 +111,7 @@ sameLitType (Lit (StringLit _)) (Lit (StringLit _)) = True
 sameLitType (Lit (BoolLit _)) (Lit (BoolLit _)) = True
 sameLitType _ _ = False
 
-evalTruthy :: ComparrisonOp -> Expr -> Expr -> Either Error Expr
+evalTruthy :: ComparrisonOp -> Expr -> Expr -> EvalM Expr
 evalTruthy operator e1 e2 = do
    e1 <- eval e1
    e2 <- eval e2
@@ -112,30 +119,22 @@ evalTruthy operator e1 e2 = do
         EQ -> Lit $ BoolLit $ literalTruth e1 == literalTruth e2
         NEQ -> Lit $ BoolLit $ literalTruth e1 /= literalTruth e2
 
-evalNotTruthy :: Expr -> Either Error Expr
-evalNotTruthy e = case eval e of
-                    Left err -> Left err --A subexpression failed to evaluate
-                    Right (Lit (BoolLit b)) -> Right $ Lit $ BoolLit (not b)    --Bools are bools
-                    Right (Lit Nil) -> Right $ Lit $ BoolLit True               --Nil is falsy
-                    Right e -> Right $ Lit $ BoolLit False                      --Every else is truthy
+evalNotTruthy :: Expr -> EvalM Expr
+evalNotTruthy e = do
+    e' <- eval e
+    return $ case e' of
+        (Lit (BoolLit b)) -> Lit $ BoolLit (not b)    --Bools are bools
+        (Lit Nil) -> Lit $ BoolLit True               --Nil is falsy
+        e -> Lit $ BoolLit False                      --Every else is truthy
 
 literalTruth :: Expr -> Bool
 literalTruth (Lit Nil) = False
 literalTruth (Lit (BoolLit False)) = False
 literalTruth _ = True
 
-interpretIO :: Program -> IO ()
-interpretIO ((PrintStatement e):xs) = do
-    case eval e of
-        Left e' -> putStrLn $ "INTERPRET " <> show e' --TODO pretty print
-        Right val -> putStrLn (show val) >> interpretIO xs
-interpretIO ((ExprStatement e):xs) = do
-    --TODO port eval to some state containing monad
-    interpretIO xs
-interpretIO [] = return ()
-
 --Literal might conflict with first class functions
-type Environment = HM.HashMap Identifier Literal
+--Testing expr for now
+type Environment = M.Map Identifier Expr
 
 runtimeVarError :: Identifier -> String
 runtimeVarError identifier = "Undefined variable '" <> identifier <> "'."
@@ -148,5 +147,46 @@ newtype EvalM a = EvalM { runEval :: StateT Environment IO a }
                    , Applicative
                    , Monad
                    , MonadState Environment
+                   , MonadFail --Evaluation can fail due to type mismatches (or soon undeclared identifiers)
                    , MonadIO
                    )
+
+emptyEnv = M.empty
+
+runEvalM :: EvalM Expr -> Environment -> IO (Expr, Environment)
+runEvalM x = runStateT (runEval x)
+
+--interpretM :: EvalM Program -> Environment -> IO Environment
+--interpretM x env = execStateT (runEval x) env
+
+interpretM :: Program -> EvalM Program
+interpretM [] = return []
+interpretM ((PrintStatement e): xs) = do
+    e' <- eval e
+    liftIO $ print $ "PRINT: " <> show e'
+    interpretM xs
+interpretM ((ExprStatement e) : xs) = do
+    _ <- eval e
+    interpretM xs
+
+interpretM ((VarDeclaration i Nothing) : xs) = do
+    env <- get
+    let e = Lit Nil
+    let env' = M.insert i e env
+    put env'
+    --TODO rewrite with modify
+    interpretM xs
+
+interpretM (VarDeclaration i (Just e) : xs) = do
+    e' <- eval e
+    --TODO rewrite with modify
+    env <- get
+    let env' = M.insert i e' env
+    put env'
+    interpretM xs
+
+interpretProgram :: Program -> IO Environment
+interpretProgram p = execStateT (runEval $ interpretM p) emptyEnv
+
+--Test expressions
+--pfoo = interpretProgram $ parseProgram "print 5; print 6;"

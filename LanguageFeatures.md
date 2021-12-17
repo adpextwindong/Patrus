@@ -33,17 +33,13 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
         - [x] GT
         - [x] GTE
     - [x] Equality
-    - [ ] Logical Operators
-        - [ ] And
-        - [ ] Or
-        - [ ] Not
-        - [ ] Short Circuiting
-    - [ ] Precendence and Grouping
+    - [x] Precendence and Grouping
 - [ ] Statements
     - [ ] Statement Blocks
-    - [ ] Variable Declaration
-        - [ ] Nil as default
-    - [ ] Variable Assignment
+    - [x] Variable Declaration
+        - [x] Nil as default
+    - [x] Variable Assignment
+    - [ ] Lexical Scoping
     - [ ] Control Flow
         - [ ] If-else
         - [ ] While
@@ -64,7 +60,7 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
         - [ ] Superclass Methods
         - [ ] Class Constructor Inheritance aka `super` keyword
 - [ ] "Standard Library"
-    - [ ] Built-in `print`
+    - [x] Built-in `print`
     - [ ] Clock Function for benchmarking
 
 ## Lexer Notes

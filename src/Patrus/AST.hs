@@ -19,6 +19,7 @@ type Identifier = String
 data Statement = ExprStatement Expr
                | PrintStatement Expr
                | VarDeclaration Identifier (Maybe Expr)
+               | BlockStatement [Statement]
                deriving Show
 
 data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE
@@ -194,6 +195,8 @@ interpretM (VarDeclaration i (Just e) : xs) = do
     --TODO lexical scoping
     modifyEnv (insertEnv i e')
     interpretM xs
+
+interpretM ((BlockStatement bs):xs) = interpretM bs >> interpretM xs
 
 modifyEnv :: (Environment -> Environment) -> EvalM ()
 modifyEnv f = get >>= (put . f)

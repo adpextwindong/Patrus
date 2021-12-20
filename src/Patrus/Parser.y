@@ -94,6 +94,9 @@ VarDecl : VAR TIdentifier EQUAL Expr SEMICOLON            { (\(TIdentifier s _) 
 Statement :: { Statement }
 Statement : ExprStatement { $1 }
           | PrintStatement { $1 }
+          | Block          { $1 }
+
+Block : LEFT_BRACE Declarations RIGHT_BRACE { BlockStatement $2 }
 
 ExprStatement : Expr SEMICOLON                            { ExprStatement $1 }
 

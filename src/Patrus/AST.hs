@@ -196,7 +196,17 @@ interpretM (VarDeclaration i (Just e) : xs) = do
     modifyEnv (insertEnv i e')
     interpretM xs
 
-interpretM ((BlockStatement bs):xs) = interpretM bs >> interpretM xs
+interpretM ((BlockStatement bs):xs) = do
+    modifyEnv $ pushFreshEnv
+    interpretM bs
+    modifyEnv $ popEnv
+    interpretM xs
+
+pushFreshEnv :: Environment -> Environment
+pushFreshEnv = Env M.empty
+
+popEnv :: Environment -> Environment
+popEnv (Env _ p) = p
 
 modifyEnv :: (Environment -> Environment) -> EvalM ()
 modifyEnv f = get >>= (put . f)

@@ -69,6 +69,7 @@ import Patrus.AST as AST
     TRUE            { TKeyword TRUE _ }
     VAR             { TKeyword VAR _ }
     WHILE           { TKeyword WHILE _ }
+    DUMP { TKeyword DUMP _ }
 
     TIdentifier     { TIdentifier _ _ }
     TEOF            { TEOF }
@@ -95,12 +96,15 @@ Statement :: { Statement }
 Statement : ExprStatement { $1 }
           | PrintStatement { $1 }
           | Block          { $1 }
+          | DumpStatement { $1 }
 
 Block : LEFT_BRACE Declarations RIGHT_BRACE { BlockStatement $2 }
 
 ExprStatement : Expr SEMICOLON                            { ExprStatement $1 }
 
 PrintStatement : PRINT Expr SEMICOLON                     { PrintStatement $2 }
+
+DumpStatement : DUMP SEMICOLON { DumpStatement }
 
 Expr :: { Expr }
 Expr : Assignment                               { $1 }

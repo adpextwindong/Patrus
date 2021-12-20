@@ -20,6 +20,7 @@ data Statement = ExprStatement Expr
                | PrintStatement Expr
                | VarDeclaration Identifier (Maybe Expr)
                | BlockStatement [Statement]
+               | DumpStatement
                deriving Show
 
 data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE
@@ -149,6 +150,7 @@ data Environment = Env {
                        scope :: M.Map Identifier Expr
                       ,enclosing :: Environment
                    } | EmptyEnv
+                    deriving Show
 
 insertEnv :: Identifier -> Expr -> Environment -> Environment
 insertEnv i e EmptyEnv = Env (M.singleton i e) EmptyEnv
@@ -181,6 +183,12 @@ interpretM ((PrintStatement e): xs) = do
     e' <- eval e
     liftIO $ print $ "PRINT: " <> show e'
     interpretM xs
+
+interpretM ((DumpStatement) : xs) = do
+    env <- get
+    liftIO $ print $ "DUMP: " <> show env
+    interpretM xs
+
 interpretM ((ExprStatement e) : xs) = do
     _ <- eval e
     interpretM xs
@@ -197,10 +205,10 @@ interpretM (VarDeclaration i (Just e) : xs) = do
     interpretM xs
 
 interpretM ((BlockStatement bs):xs) = do
-    modifyEnv $ pushFreshEnv
-    interpretM bs
-    modifyEnv $ popEnv
+    withFreshEnv (interpretM bs)
     interpretM xs
+
+withFreshEnv f = modifyEnv (pushFreshEnv) >> f >> modifyEnv (popEnv)
 
 pushFreshEnv :: Environment -> Environment
 pushFreshEnv = Env M.empty
@@ -214,5 +222,4 @@ modifyEnv f = get >>= (put . f)
 interpretProgram :: Program -> IO Environment
 interpretProgram p = execStateT (runEval $ interpretM p) EmptyEnv
 
---Test expressions
---pfoo = interpretProgram $ parseProgram "print 5; print 6;"
+runProgram p = runStateT (runEval $ interpretM p) EmptyEnv

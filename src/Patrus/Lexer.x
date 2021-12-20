@@ -70,6 +70,7 @@ tokens :-
     "true"               { \p s -> TKeyword TRUE p }
     "var"                { \p s -> TKeyword VAR p }
     "while"              { \p s -> TKeyword WHILE p }
+    "DUMP"  { \p s -> TKeyword DUMP p }
 
     $alphanumeric+ { \p s -> TIdentifier s p }
 {
@@ -88,6 +89,7 @@ data TOperator = BANG | BANG_EQUAL |
 
 data TKeyword = AND | CLASS | ELSE | FALSE | FUN | FOR |  IF | NIL | OR |
                 PRINT | RETURN | SUPER | THIS | TRUE | VAR | WHILE
+                | DUMP
   deriving Show
 
 data Token = TSChar TSingleChar AlexPosn

@@ -1080,8 +1080,20 @@ Undefined variable 'baz'.
 4
 ```
 
-NOTE: I made the same mistake again where I forgot the to reverse the parsed list for block statements in the Parser.
+## [8.5 - Scope](https://craftinginterpreters.com/statements-and-state.html#scope)
 
+## [8.5.1 - Nesting and shadowing](https://craftinginterpreters.com/statements-and-state.html#nesting-and-shadowing)
+
+TODO 298eee4
+
+## [8.5.2 - Block syntax and semantics](https://craftinginterpreters.com/statements-and-state.html#block-syntax-and-semantics)
+
+TODO 3c5d8c5, 94ed7b3, 7452969, 428664d
+NOTE: I made the same mistake again where I forgot to [reverse the parsed list](https://www.haskell.org/happy/doc/html/sec-sequences.html) for block statements in the Parser. 428664d fixes this.
+
+NOTE: 40ade94 For debugging purposes I added a DUMP statement.
+
+This now works:
 
 ```jlox
 var a = 5;
@@ -1098,6 +1110,22 @@ var a = 5;
 print a;"
 ```
 
+```haskell
 "PRINT: Lit (NumberLit 10.0)"
 "PRINT: Lit (NumberLit 15.0)"
 "PRINT: Lit (NumberLit 5.0)"
+```
+
+NOTE: Patrus works different than Jlox currently with regards to this program:
+
+```lox
+var a = 1;
+{
+    var a = a + 2;
+    print a;
+}
+```
+
+Jlox reports "Error at 'a': Can't read local variable in its own initializer."
+
+Patrus prints 3.

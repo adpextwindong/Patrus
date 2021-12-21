@@ -5,6 +5,7 @@ import Debug.Trace
 import GHC.Float
 import Prelude hiding (EQ,LT,GT)
 
+import Control.Monad.IO.Class
 import Control.Monad.State.Class (MonadState (..))
 
 import Patrus.Environment
@@ -24,14 +25,12 @@ eval :: Expr -> EvalM Expr
 eval e@(Lit _) = return e
 eval (Var i) = do
     env <- get
-    --TODO lexical scoping
     case lookupEnv i env of
         Nothing -> fail $ runtimeVarError i
         Just v -> return v
 
 eval (Assignment i e) = do
    e' <- eval e
-   --TODO lexical scoping
    modifyEnv $ insertEnv i e'
    return e'
 

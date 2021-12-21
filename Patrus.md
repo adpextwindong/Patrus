@@ -1079,3 +1079,25 @@ Undefined variable 'baz'.
 > print foo;
 4
 ```
+
+NOTE: I made the same mistake again where I forgot the to reverse the parsed list for block statements in the Parser.
+
+
+```jlox
+var a = 5;
+
+    {
+        var a = 10;
+        print a;
+
+        { var a = 15;
+          print a;
+        }
+    }
+
+print a;"
+```
+
+"PRINT: Lit (NumberLit 10.0)"
+"PRINT: Lit (NumberLit 15.0)"
+"PRINT: Lit (NumberLit 5.0)"

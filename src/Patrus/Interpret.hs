@@ -28,13 +28,11 @@ interpretM ((ExprStatement e) : xs) = do
     interpretM xs
 
 interpretM ((VarDeclaration i Nothing) : xs) = do
-    --TODO lexical scoping
     modifyEnv $ insertEnv i (Lit Nil)
     interpretM xs
 
 interpretM (VarDeclaration i (Just e) : xs) = do
     e' <- eval e
-    --TODO lexical scoping
     modifyEnv (insertEnv i e')
     interpretM xs
 

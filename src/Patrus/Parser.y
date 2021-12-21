@@ -98,7 +98,7 @@ Statement : ExprStatement { $1 }
           | Block          { $1 }
           | DumpStatement { $1 }
 
-Block : LEFT_BRACE Declarations RIGHT_BRACE { BlockStatement $2 }
+Block : LEFT_BRACE Declarations RIGHT_BRACE { BlockStatement (reverse $2) }
 
 ExprStatement : Expr SEMICOLON                            { ExprStatement $1 }
 

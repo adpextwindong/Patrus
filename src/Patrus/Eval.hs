@@ -1,51 +1,14 @@
 {-# LANGUAGE DoAndIfThenElse #-}
-{-# LANGUAGE DerivingStrategies #-}         --EvalM
-{-# LANGUAGE GeneralizedNewtypeDeriving #-} --EvalM
-module Patrus.AST where
+module Patrus.Eval where
 
 import Debug.Trace
 import GHC.Float
 import Prelude hiding (EQ,LT,GT)
 
-                                                    --EvalM imports
-import Control.Monad.IO.Class
 import Control.Monad.State.Class (MonadState (..))
-import Control.Monad.Trans.State (StateT, runStateT, evalStateT, execStateT, modify')
-import qualified Data.Map.Strict as M
 
-type Program = [Statement]
-type Identifier = String
-
-data Statement = ExprStatement Expr
-               | PrintStatement Expr
-               | VarDeclaration Identifier (Maybe Expr)
-               | BlockStatement [Statement]
-               | DumpStatement
-               deriving Show
-
-data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE
-    deriving Show
-
-data BinOp = Cmp ComparrisonOp
-           | Plus | Minus | Mul | Div
-           deriving Show
-
-data UnaryOp = Negate | Not
-    deriving Show
-
-data Literal = NumberLit Double
-             | StringLit String
-             | BoolLit Bool
-             | Nil
-                deriving Show
-
-data Expr = BOp BinOp Expr Expr
-          | UOp UnaryOp Expr
-          | Lit Literal
-          | Group Expr
-          | Var Identifier
-          | Assignment Identifier Expr
-            deriving Show
+import Patrus.Environment
+import Patrus.Types
 
 uopTyMismatch = "Operand must be a number."
 bopTyMismatch = "Operands must be numbers."
@@ -143,83 +106,3 @@ literalTruth :: Expr -> Bool
 literalTruth (Lit Nil) = False
 literalTruth (Lit (BoolLit False)) = False
 literalTruth _ = True
-
---Literal might conflict with first class functions
---Testing expr for now
-data Environment = Env {
-                       scope :: M.Map Identifier Expr
-                      ,enclosing :: Environment
-                   } | EmptyEnv
-                    deriving Show
-
-insertEnv :: Identifier -> Expr -> Environment -> Environment
-insertEnv i e EmptyEnv = Env (M.singleton i e) EmptyEnv
-insertEnv i e (Env scope p) = Env (M.insert i e scope) p
-
-lookupEnv :: Identifier -> Environment -> Maybe Expr
-lookupEnv i EmptyEnv = Nothing
-lookupEnv i (Env scope parent) = case M.lookup i scope of
-                                    Just v -> Just v
-                                    Nothing -> lookupEnv i parent
-
-
---like Intrigue's EvalM but with StateT
-newtype EvalM a = EvalM { runEval :: StateT Environment IO a }
-  deriving newtype ( Functor
-                   , Applicative
-                   , Monad
-                   , MonadState Environment
-                   , MonadFail --Evaluation can fail due to type mismatches (or soon undeclared identifiers)
-                   , MonadIO
-                   )
-
-
-runEvalM :: EvalM Expr -> Environment -> IO (Expr, Environment)
-runEvalM x = runStateT (runEval x)
-
-interpretM :: Program -> EvalM Program
-interpretM [] = return []
-interpretM ((PrintStatement e): xs) = do
-    e' <- eval e
-    liftIO $ print $ "PRINT: " <> show e'
-    interpretM xs
-
-interpretM ((DumpStatement) : xs) = do
-    env <- get
-    liftIO $ print $ "DUMP: " <> show env
-    interpretM xs
-
-interpretM ((ExprStatement e) : xs) = do
-    _ <- eval e
-    interpretM xs
-
-interpretM ((VarDeclaration i Nothing) : xs) = do
-    --TODO lexical scoping
-    modifyEnv $ insertEnv i (Lit Nil)
-    interpretM xs
-
-interpretM (VarDeclaration i (Just e) : xs) = do
-    e' <- eval e
-    --TODO lexical scoping
-    modifyEnv (insertEnv i e')
-    interpretM xs
-
-interpretM ((BlockStatement bs):xs) = do
-    withFreshEnv (interpretM bs)
-    interpretM xs
-
-withFreshEnv f = modifyEnv (pushFreshEnv) >> f >> modifyEnv (popEnv)
-
-pushFreshEnv :: Environment -> Environment
-pushFreshEnv = Env M.empty
-
-popEnv :: Environment -> Environment
-popEnv (Env _ p) = p
-
-modifyEnv :: (Environment -> Environment) -> EvalM ()
-modifyEnv f = get >>= (put . f)
-
-interpretProgram :: Program -> IO Environment
-interpretProgram p = execStateT (runEval $ interpretM p) EmptyEnv
-
-runProgram p = runStateT (runEval $ interpretM p) EmptyEnv

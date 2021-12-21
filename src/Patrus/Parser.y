@@ -8,7 +8,7 @@ import Control.Monad.Except
 import Control.Exception
 
 import Patrus.Lexer
-import Patrus.AST as AST
+import Patrus.Types as AST
 
 }
 

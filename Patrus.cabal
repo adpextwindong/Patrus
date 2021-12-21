@@ -32,8 +32,12 @@ library
     exposed-modules:
         Patrus.Parser
         Patrus.Lexer
-        Patrus.AST
-        Patrus.AST.PrettyPrinter
+        Patrus.Eval
+        Patrus.Eval.PrettyPrinter
+        Patrus.Environment
+        Patrus.Types
+        Patrus.Interpret
+        Patrus
     hs-source-dirs: src/
 
 executable PatrusMain

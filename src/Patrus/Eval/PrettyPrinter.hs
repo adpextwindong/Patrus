@@ -1,10 +1,10 @@
-module Patrus.AST.PrettyPrinter
+module Patrus.Eval.PrettyPrinter
     ( prettyPrintAST ) where
 
 import GHC.Float
 import Prelude as P
 
-import Patrus.AST as A
+import Patrus.Types as A
 
 wrapParens :: String -> String
 wrapParens s = "(" ++ s ++ ")"

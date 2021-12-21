@@ -1129,3 +1129,5 @@ var a = 1;
 Jlox reports "Error at 'a': Can't read local variable in its own initializer."
 
 Patrus prints 3.
+
+TODO hspec test like [snailscheme](https://github.com/chiroptical/snailscheme) for scoping

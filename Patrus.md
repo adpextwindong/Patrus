@@ -1244,3 +1244,55 @@ Source File: src/Patrus/Interpret.hs
 TODO 843b0d8
 
 ### [9.4 - While Loops](https://craftinginterpreters.com/control-flow.html#while-loops)
+
+```happy
+OpenStmt : IF LEFT_PAREN Expr RIGHT_PAREN Statement                    { IfStatement $3 $5 Nothing   }
+         | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE OpenStmt     { IfStatement $3 $5 (Just $7) }
+         | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE OpenStmt     { IfStatement $3 $5 (Just $7) }
+         | WHILE LEFT_PAREN Expr RIGHT_PAREN OpenStmt                  { WhileStatement $3 $5 }
+
+ClosedStmt : SimpleStmt                                                 { $1 }
+           | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE ClosedStmt  { IfStatement $3 $5 (Just $7) }
+           | WHILE LEFT_PAREN Expr RIGHT_PAREN ClosedStmt               { WhileStatement $3 $5 }
+```
+Source File: src/Patrus/Parser.y
+
+```haskell
+data Statement = ExprStatement Expr
+               | VarDeclaration Identifier (Maybe Expr)
+               | BlockStatement [Statement]
+               | IfStatement Expr Statement (Maybe Statement)
+               | WhileStatement Expr Statement
+               | DumpStatement
+               deriving Show
+```
+Source File: src/Patrus/Types.hs
+
+```haskell
+interpretM w@((WhileStatement conde body):xs) = do
+    e <- eval conde
+
+    if literalTruth e
+    then interpretM [body] >> interpretM w
+    else interpretM xs
+```
+Source File: src/Patrus/Interpret.hs
+
+Now this is possible.
+
+```lox
+var x = 5;
+while (x >= 0){
+    print x;
+    x = x - 1;
+}
+```
+
+```haskell
+"PRINT: Lit (NumberLit 5.0)"
+"PRINT: Lit (NumberLit 4.0)"
+"PRINT: Lit (NumberLit 3.0)"
+"PRINT: Lit (NumberLit 2.0)"
+"PRINT: Lit (NumberLit 1.0)"
+"PRINT: Lit (NumberLit 0.0)"
+```

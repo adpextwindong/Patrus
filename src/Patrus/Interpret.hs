@@ -1,3 +1,4 @@
+{-# LANGUAGE DoAndIfThenElse #-}
 module Patrus.Interpret where
 
 import Control.Monad.IO.Class
@@ -38,6 +39,17 @@ interpretM (VarDeclaration i (Just e) : xs) = do
 
 interpretM ((BlockStatement bs):xs) = do
     withFreshEnv (interpretM bs)
+    interpretM xs
+
+interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
+    e <- eval conde
+
+    if literalTruth e
+    then interpretM [trueBranch]
+    else case falseBranch of
+        Just fb -> interpretM [fb]
+        Nothing -> pure []
+
     interpretM xs
 
 interpretProgram :: Program -> IO Environment

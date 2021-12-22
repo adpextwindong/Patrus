@@ -50,20 +50,21 @@ eval (BOp (Cmp NEQ) e1 e2) = evalTruthy NEQ e1 e2
 -- Sub expressions need to be evaluated and type mismatches should be handled.
 eval (BOp operator e1 e2) = do
     (e1,e2) <- literalBopTyMatch operator e1 e2
-    return $ evalBop operator e1 e2
+    evalBop operator e1 e2
 
-evalBop :: BinOp -> Expr -> Expr -> Expr
-evalBop (Cmp LT)  (Lit (BoolLit a)) (Lit (BoolLit b)) = Lit $ BoolLit $ a < b
-evalBop (Cmp LTE) (Lit (BoolLit a)) (Lit (BoolLit b)) = Lit $ BoolLit $ a <= b
-evalBop (Cmp GT)  (Lit (BoolLit a)) (Lit (BoolLit b)) = Lit $ BoolLit $ a > b
-evalBop (Cmp GTE) (Lit (BoolLit a)) (Lit (BoolLit b)) = Lit $ BoolLit $ a >= b
+evalBop :: BinOp -> Expr -> Expr -> EvalM Expr
+evalBop (Cmp LT)  (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a < b
+evalBop (Cmp LTE) (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a <= b
+evalBop (Cmp GT)  (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a > b
+evalBop (Cmp GTE) (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a >= b
 
-evalBop Plus (Lit (StringLit s1)) (Lit (StringLit s2)) = Lit $ StringLit (s1 <> s2)
-evalBop Plus (Lit (NumberLit x)) (Lit (NumberLit y))   = Lit $ NumberLit (x + y)
-evalBop Minus (Lit (NumberLit x)) (Lit (NumberLit y))  = Lit $ NumberLit (x - y)
-evalBop Mul (Lit (NumberLit x)) (Lit (NumberLit y))    = Lit $ NumberLit (x * y)
-evalBop Div (Lit (NumberLit x)) (Lit (NumberLit y))    = Lit $ NumberLit (x / y)
+evalBop Plus (Lit (StringLit s1)) (Lit (StringLit s2)) = pure $ Lit $ StringLit (s1 <> s2)
+evalBop Plus (Lit (NumberLit x)) (Lit (NumberLit y))   = pure $ Lit $ NumberLit (x + y)
+evalBop Minus (Lit (NumberLit x)) (Lit (NumberLit y))  = pure $ Lit $ NumberLit (x - y)
+evalBop Mul (Lit (NumberLit x)) (Lit (NumberLit y))    = pure $ Lit $ NumberLit (x * y)
+evalBop Div (Lit (NumberLit x)) (Lit (NumberLit y))    = pure $ Lit $ NumberLit (x / y)
 
+evalBop _ _ _ = fail $ bopTyMismatch
 --evalBop op e1 e2 = trace ("EXHAUST: "<> show op <> " " <> show e1 <> " " <> show e2) $ undefined
 
 -- | Performs strict type matching for PLUS/MINUS/DIV/MUL/LT/LTE/GT/GTE

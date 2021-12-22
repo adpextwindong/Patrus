@@ -1228,3 +1228,9 @@ interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
     interpretM xs
 ```
 Source File: src/Patrus/Interpret.hs
+
+### [9.3 - Logical Operators](https://craftinginterpreters.com/control-flow.html#logical-operators)
+
+TODO 843b0d8
+
+### [9.4 - While Loops](https://craftinginterpreters.com/control-flow.html#while-loops)

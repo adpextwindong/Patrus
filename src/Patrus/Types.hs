@@ -14,6 +14,7 @@ data Statement = ExprStatement Expr
                | PrintStatement Expr
                | VarDeclaration Identifier (Maybe Expr)
                | BlockStatement [Statement]
+               | IfStatement Expr Statement (Maybe Statement)
                | DumpStatement
                deriving Show
 

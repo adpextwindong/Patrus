@@ -93,10 +93,19 @@ VarDecl : VAR TIdentifier EQUAL Expr SEMICOLON            { (\(TIdentifier s _) 
         | VAR TIdentifier SEMICOLON                       { (\(TIdentifier s _) -> VarDeclaration s Nothing) $2 }
 
 Statement :: { Statement }
-Statement : ExprStatement { $1 }
-          | PrintStatement { $1 }
-          | Block          { $1 }
-          | DumpStatement { $1 }
+Statement : OpenStmt       { $1 }
+          | ClosedStmt     { $1 }
+
+OpenStmt : IF LEFT_PAREN Expr RIGHT_PAREN Statement                    { IfStatement $3 $5 Nothing   }
+         | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE OpenStmt      { IfStatement $3 $5 (Just $7) }
+
+ClosedStmt : SimpleStmt                                                 { $1 }
+           | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE ClosedStmt  { IfStatement $3 $5 (Just $7) }
+
+SimpleStmt : ExprStatement  { $1 }
+           | PrintStatement { $1 }
+           | Block          { $1 }
+           | DumpStatement  { $1 }
 
 Block : LEFT_BRACE Declarations RIGHT_BRACE { BlockStatement (reverse $2) }
 

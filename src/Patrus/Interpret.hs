@@ -52,6 +52,13 @@ interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
 
     interpretM xs
 
+interpretM w@((WhileStatement conde body):xs) = do
+    e <- eval conde
+
+    if literalTruth e
+    then interpretM [body] >> interpretM w
+    else interpretM xs
+
 interpretProgram :: Program -> IO Environment
 interpretProgram p = execStateT (runEval $ interpretM p) EmptyEnv
 

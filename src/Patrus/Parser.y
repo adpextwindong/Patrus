@@ -97,10 +97,12 @@ Statement : OpenStmt       { $1 }
           | ClosedStmt     { $1 }
 
 OpenStmt : IF LEFT_PAREN Expr RIGHT_PAREN Statement                    { IfStatement $3 $5 Nothing   }
-         | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE OpenStmt      { IfStatement $3 $5 (Just $7) }
+         | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE OpenStmt     { IfStatement $3 $5 (Just $7) }
+         | WHILE LEFT_PAREN Expr RIGHT_PAREN OpenStmt                  { WhileStatement $3 $5 }
 
 ClosedStmt : SimpleStmt                                                 { $1 }
            | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE ClosedStmt  { IfStatement $3 $5 (Just $7) }
+           | WHILE LEFT_PAREN Expr RIGHT_PAREN ClosedStmt               { WhileStatement $3 $5 }
 
 SimpleStmt : ExprStatement  { $1 }
            | PrintStatement { $1 }

@@ -1132,6 +1132,16 @@ Patrus prints 3.
 
 TODO hspec test like [snailscheme](https://github.com/chiroptical/snailscheme) for scoping
 
+TODO 026fc4c fixes the following
+
+```lox
+var x = 2;
+{
+    x = 5;
+}
+print x;
+```
+
 ## [9 - Control Flow](https://craftinginterpreters.com/control-flow.html)
 
 ### [9.2 - Control Execution](https://craftinginterpreters.com/control-flow.html#conditional-execution)

@@ -34,14 +34,14 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
         - [x] GTE
     - [x] Equality
     - [x] Precendence and Grouping
-- [ ] Statements
-    - [ ] Statement Blocks
+- [x] Statements
+    - [x] Statement Blocks
     - [x] Variable Declaration
         - [x] Nil as default
     - [x] Variable Assignment
-    - [ ] Lexical Scoping
+    - [x] Lexical Scoping
     - [ ] Control Flow
-        - [ ] If-else
+        - [x] If-else
         - [ ] While
         - [ ] C-style forloop
     - [ ] Function Declaration

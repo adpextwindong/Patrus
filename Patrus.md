@@ -1131,3 +1131,100 @@ Jlox reports "Error at 'a': Can't read local variable in its own initializer."
 Patrus prints 3.
 
 TODO hspec test like [snailscheme](https://github.com/chiroptical/snailscheme) for scoping
+
+## [9 - Control Flow](https://craftinginterpreters.com/control-flow.html)
+
+### [9.2 - Control Execution](https://craftinginterpreters.com/control-flow.html#conditional-execution)
+
+TODO 1bbd8fd, 0cc40b8
+
+For if-statements we can add to the AST another data constructor. With a Maybe to handle else branches being optional. The Expr is the conditional expression which we'll evaluate to its truthyness to continue executing the IFE.
+
+```haskell
+data Statement = ExprStatement Expr
+               | PrintStatement Expr
+               | VarDeclaration Identifier (Maybe Expr)
+               | BlockStatement [Statement]
+               | IfStatement Expr Statement (Maybe Statement)
+               | DumpStatement
+               deriving Show
+```
+Source File: src/Patrus/Types.hs
+
+#### IFE Parsing ambiguity
+
+Naively adding to the parser IFEs like this:
+
+```
+IfStatement : IF LEFT_PAREN Expr RIGHT_PAREN Statement                  { IfStatement $3 $5 Nothing }
+            | IF LEFT_PAREN Expr RIGHT_PAREN Statement ELSE Statement   { IfStatement $3 $5 (Just $7) }
+```
+
+Leads to one shift/reduce conflict.
+
+Resulting in this parsing.
+
+```haskell
+parseProgram "if (true) if (false) 5; else 10;"
+
+[IfStatement (Lit (BoolLit True))
+    (IfStatement (Lit (BoolLit False)) (ExprStatement (Lit (NumberLit 5.0)))
+                                       (Just (ExprStatement (Lit (NumberLit 10.0)))))
+    Nothing]
+```
+
+aka
+
+```
+if (condA) {
+    if (condB) statementA; else statementB;
+}
+```
+
+Its still ambigious with the following:
+
+```
+if (condA) {
+    if (condB) statementA;
+} else statementB;
+```
+
+Happy takes the [longest parse rule](https://www.haskell.org/happy/doc/html/sec-conflict-tips.html) to resolve this.
+
+This bit is called the [Dangling Else Problem](https://en.wikipedia.org/wiki/Dangling_else#Avoiding_the_conflict_in_LR_parsers).
+
+The solution is to split our statements into "open" and "closed" statements. The ambiguity is resolved by if branches only containing closed statements. The other statements which we can consider as simple w.r.t this ambiguity are put into a seperate nonterminal called SimpleStmt.
+
+```happy
+Statement :: { Statement }
+Statement : OpenStmt       { $1 }
+          | ClosedStmt     { $1 }
+
+OpenStmt : IF LEFT_PAREN Expr RIGHT_PAREN Statement                    { IfStatement $3 $5 Nothing   }
+         | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE OpenStmt      { IfStatement $3 $5 (Just $7) }
+
+ClosedStmt : SimpleStmt                                                 { $1 }
+           | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE ClosedStmt  { IfStatement $3 $5 (Just $7) }
+
+SimpleStmt : ExprStatement  { $1 }
+           | PrintStatement { $1 }
+           | Block          { $1 }
+           | DumpStatement  { $1 }
+```
+Source File: src/Patrus/Parser.y
+
+For interpreting the IfStatement we can just pattern match like usual and use the literalTruth function from earlier.
+
+```haskell
+interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
+    e <- eval conde
+
+    if literalTruth e
+    then interpretM [trueBranch]
+    else case falseBranch of
+        Just fb -> interpretM [fb]
+        Nothing -> pure []
+
+    interpretM xs
+```
+Source File: src/Patrus/Interpret.hs

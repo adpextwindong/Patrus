@@ -31,7 +31,7 @@ eval (Var i) = do
 
 eval (Assignment i e) = do
    e' <- eval e
-   modifyEnv $ insertEnv i e'
+   put =<< adjustEnvFM i e' =<< get
    return e'
 
 eval (Group e) = eval e

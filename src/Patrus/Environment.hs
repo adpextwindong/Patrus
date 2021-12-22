@@ -1,3 +1,4 @@
+{-# LANGUAGE DoAndIfThenElse #-}
 module Patrus.Environment where
 
 import qualified Data.Map.Strict as M
@@ -9,6 +10,16 @@ import Patrus.Types
 insertEnv :: Identifier -> Expr -> Environment -> Environment
 insertEnv i e EmptyEnv = Env (M.singleton i e) EmptyEnv
 insertEnv i e (Env scope p) = Env (M.insert i e scope) p
+
+-- | Adjusts an existing binding or fails if it does not exist in the lexical scopes.
+adjustEnvFM :: (MonadFail m) => Identifier -> Expr -> Environment -> m Environment
+adjustEnvFM i _ EmptyEnv = fail $ "Undefined variable \'" <> i <> "\'."
+adjustEnvFM i e (Env scope p) = do
+    if M.member i scope
+    then return (Env (M.insert i e scope) p)
+    else do
+        p' <- adjustEnvFM i e p
+        return $ Env scope p'
 
 -- | Recursively looks up the identifier in each map
 lookupEnv :: Identifier -> Environment -> Maybe Expr

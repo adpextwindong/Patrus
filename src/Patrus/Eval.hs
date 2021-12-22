@@ -45,6 +45,8 @@ eval (UOp Negate e) = do
 eval (UOp Not e) = evalNotTruthy e
 eval (BOp (Cmp EQ) e1 e2) = evalTruthy EQ e1 e2
 eval (BOp (Cmp NEQ) e1 e2) = evalTruthy NEQ e1 e2
+eval (BOp And e1 e2) = evalTruthyShortCircuit And e1 e2
+eval (BOp Or e1 e2) = evalTruthyShortCircuit Or e1 e2
 
 --Strict Type Matching operators
 -- Sub expressions need to be evaluated and type mismatches should be handled.
@@ -52,6 +54,7 @@ eval (BOp operator e1 e2) = do
     (e1,e2) <- literalBopTyMatch operator e1 e2
     evalBop operator e1 e2
 
+-- Handles all nonTruthy operators
 evalBop :: BinOp -> Expr -> Expr -> EvalM Expr
 evalBop (Cmp LT)  (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a < b
 evalBop (Cmp LTE) (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a <= b
@@ -101,6 +104,22 @@ evalNotTruthy e = do
         (Lit (BoolLit b)) -> Lit $ BoolLit (not b)    --Bools are bools
         (Lit Nil) -> Lit $ BoolLit True               --Nil is falsy
         e -> Lit $ BoolLit False                      --Every else is truthy
+
+evalTruthyShortCircuit And e1 e2 = do
+    e1' <- eval e1
+    if not . literalTruth $ e1'
+    then return e1'
+    else do
+        e2' <- eval e2
+        return e2'
+
+evalTruthyShortCircuit Or e1 e2 = do
+    e1' <- eval e1
+    if literalTruth e1'
+    then return e1'
+    else do
+        e2' <- eval e2
+        return e2'
 
 literalTruth :: Expr -> Bool
 literalTruth (Lit Nil) = False

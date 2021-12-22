@@ -120,7 +120,13 @@ Expr : Assignment                               { $1 }
 
 Assignment :: { Expr }
 Assignment : TIdentifier EQUAL Assignment       { (\(TIdentifier s _) -> Assignment s $3 ) $1 }
-           | Equality                           { $1 }
+           | Logic_Or                           { $1 }
+
+Logic_Or : Logic_And OR Logic_Or  { BOp AST.Or $1 $3 }
+         | Logic_And              { $1 }
+
+Logic_And : Equality AND Logic_And  { BOp AST.And $1 $3 }
+          | Equality                { $1 }
 
 Equality :: { Expr }
 Equality : Comparison BANG_EQUAL Equality       { BOp (Cmp NEQ) $1 $3 }

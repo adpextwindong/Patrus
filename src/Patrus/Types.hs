@@ -23,6 +23,7 @@ data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE
 
 data BinOp = Cmp ComparrisonOp
            | Plus | Minus | Mul | Div
+           | Or | And
            deriving Show
 
 data UnaryOp = Negate | Not

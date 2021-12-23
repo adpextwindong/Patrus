@@ -17,6 +17,12 @@ data Statement = ExprStatement Expr
                | IfStatement Expr Statement (Maybe Statement)
                | WhileStatement Expr Statement
                | DumpStatement
+               | ForStatement {
+                    initializer :: Maybe Statement
+                   ,condition :: Maybe Expr
+                   ,increment :: Maybe Expr
+                   ,body :: Statement
+               }
                deriving Show
 
 data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE

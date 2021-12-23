@@ -6,6 +6,7 @@ module Patrus.Parser
 
 import Control.Monad.Except
 import Control.Exception
+import Data.Tuple.Extra (uncurry3)
 
 import Patrus.Lexer
 import Patrus.Types as AST
@@ -99,10 +100,24 @@ Statement : OpenStmt       { $1 }
 OpenStmt : IF LEFT_PAREN Expr RIGHT_PAREN Statement                    { IfStatement $3 $5 Nothing   }
          | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE OpenStmt     { IfStatement $3 $5 (Just $7) }
          | WHILE LEFT_PAREN Expr RIGHT_PAREN OpenStmt                  { WhileStatement $3 $5 }
+         | ForStmtSugar OpenStmt { (uncurry3 ForStatement $1) $2 }
 
 ClosedStmt : SimpleStmt                                                 { $1 }
            | IF LEFT_PAREN Expr RIGHT_PAREN ClosedStmt ELSE ClosedStmt  { IfStatement $3 $5 (Just $7) }
            | WHILE LEFT_PAREN Expr RIGHT_PAREN ClosedStmt               { WhileStatement $3 $5 }
+           | ForStmtSugar ClosedStmt { (uncurry3 ForStatement $1) $2 }
+
+ForStmtSugar :: { (Maybe Statement, Maybe Expr, Maybe Expr) }
+ForStmtSugar : FOR LEFT_PAREN ForInitializer ForOptExpr ForOptExpr RIGHT_PAREN { ($3, $4, $5) }
+
+ForInitializer :: { Maybe Statement }
+ForInitializer : VarDecl        { Just $1 }
+               | ExprStatement  { Just $1 }
+               | SEMICOLON      { Nothing }
+
+ForOptExpr :: { Maybe Expr }
+ForOptExpr : Expr SEMICOLON { Just $1 }
+           | SEMICOLON { Nothing }
 
 SimpleStmt : ExprStatement  { $1 }
            | PrintStatement { $1 }

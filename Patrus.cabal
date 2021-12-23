@@ -29,6 +29,7 @@ library
                    ,containers
                    ,transformers
                    ,mtl >= 2.2.2
+                   ,extra
     exposed-modules:
         Patrus.Parser
         Patrus.Lexer

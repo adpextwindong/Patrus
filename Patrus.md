@@ -1296,3 +1296,29 @@ while (x >= 0){
 "PRINT: Lit (NumberLit 1.0)"
 "PRINT: Lit (NumberLit 0.0)"
 ```
+
+### [9.5 - For Loop](https://craftinginterpreters.com/control-flow.html#for-loops)
+
+TODO 985c2a1,6abeed2
+
+#### [9.5.1 - Desugaring](https://craftinginterpreters.com/control-flow.html#desugaring)
+
+The following:
+
+```lox
+for(var x = 0; x < 5; x = x + 1){
+    print x;
+}
+```
+
+Gets desguared to:
+
+```haskell
+[BlockStatement
+    [VarDeclaration "x" (Just (Lit (NumberLit 0.0))),
+    WhileStatement (BOp (Cmp LT) (Var "x") (Lit (NumberLit 5.0)))
+        (BlockStatement [BlockStatement [PrintStatement (Var "x")],
+                         ExprStatement (Assignment "x" (BOp Plus (Var "x") (Lit (NumberLit 1.0))))])
+    ]
+]
+```

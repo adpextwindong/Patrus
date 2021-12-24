@@ -40,10 +40,10 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
         - [x] Nil as default
     - [x] Variable Assignment
     - [x] Lexical Scoping
-    - [ ] Control Flow
+    - [x] Control Flow
         - [x] If-else
-        - [ ] While
-        - [ ] C-style forloop
+        - [x] While
+        - [x] C-style forloop
     - [ ] Function Declaration
         - [ ] Nil as default return value if return ommited.
     - [ ] Class Declaration

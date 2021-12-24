@@ -6,6 +6,7 @@ import Control.Monad.IO.Class
 import Control.Monad.State.Class (MonadState (..))
 import Control.Monad.Trans.State (StateT, runStateT, evalStateT, execStateT, modify')
 import qualified Data.Map.Strict as M
+import Data.Maybe
 
 type Program = [Statement]
 type Identifier = String
@@ -17,12 +18,6 @@ data Statement = ExprStatement Expr
                | IfStatement Expr Statement (Maybe Statement)
                | WhileStatement Expr Statement
                | DumpStatement
-               | ForStatement {
-                    initializer :: Maybe Statement
-                   ,condition :: Maybe Expr
-                   ,increment :: Maybe Expr
-                   ,body :: Statement
-               }
                deriving Show
 
 data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE
@@ -65,3 +60,10 @@ newtype EvalM a = EvalM { runEval :: StateT Environment IO a }
                    , MonadFail --Evaluation can fail due to type mismatches (or soon undeclared identifiers)
                    , MonadIO
                    )
+
+desugarFor :: Maybe Statement -> Maybe Expr -> Maybe Expr -> Statement -> Statement
+desugarFor initializer condition increment body = BlockStatement $ forInit ++ [forBody]
+  where
+    forInit = maybeToList initializer
+    forCondition = fromMaybe (Lit (BoolLit True)) condition
+    forBody = WhileStatement forCondition $ BlockStatement $ body : maybeToList (fmap ExprStatement increment)

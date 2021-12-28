@@ -1322,3 +1322,17 @@ Gets desguared to:
     ]
 ]
 ```
+
+## [10 - Functions](https://craftinginterpreters.com/functions.html)
+
+### [10.1 - Function Calls](https://craftinginterpreters.com/functions.html#function-calls)
+
+TODO fix calls like this
+
+```lox
+foo()();
+```
+
+```
+call → primary ( "(" arguments? ")" )* ;
+```

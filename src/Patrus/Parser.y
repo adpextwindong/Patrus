@@ -174,7 +174,16 @@ Factor : Unary SLASH Unary                      { BOp Div $1 $3 }
 Unary :: { Expr }
 Unary : BANG Unary                              { UOp Not $2 }
       | MINUS Unary                             { UOp Negate $2 }
-      | Primary                                 { $1 }
+      | Call                                    { $1 }
+
+Call :: { Expr }
+Call : Primary { $1 }
+     | Primary LEFT_PAREN RIGHT_PAREN { Call $1 [] }
+     | Primary LEFT_PAREN Arguments { Call $1 $3 }
+
+Arguments :: { [Expr] }
+Arguments : Expr COMMA Arguments { $1 : $3 }
+          | Expr RIGHT_PAREN { [$1] }
 
 Primary :: { Expr }
 Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit (StringLit s)) $1 }

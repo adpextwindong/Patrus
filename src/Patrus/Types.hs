@@ -18,24 +18,24 @@ data Statement = ExprStatement Expr
                | IfStatement Expr Statement (Maybe Statement)
                | WhileStatement Expr Statement
                | DumpStatement
-               deriving Show
+               deriving (Show, Eq)
 
 data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE
-    deriving Show
+    deriving (Show, Eq)
 
 data BinOp = Cmp ComparrisonOp
            | Plus | Minus | Mul | Div
            | Or | And
-           deriving Show
+           deriving (Show, Eq)
 
 data UnaryOp = Negate | Not
-    deriving Show
+    deriving (Show, Eq)
 
 data Literal = NumberLit Double
              | StringLit String
              | BoolLit Bool
              | Nil
-                deriving Show
+                deriving (Show, Eq)
 
 data Expr = BOp BinOp Expr Expr
           | UOp UnaryOp Expr
@@ -43,13 +43,14 @@ data Expr = BOp BinOp Expr Expr
           | Group Expr
           | Var Identifier
           | Assignment Identifier Expr
-            deriving Show
+          | Call Expr [Expr]
+            deriving (Show, Eq)
 
 data Environment = Env {
                        scope :: M.Map Identifier Expr
                       ,enclosing :: Environment
                    } | EmptyEnv
-                    deriving Show
+                    deriving (Show, Eq)
 
 --like Intrigue's EvalM but with StateT
 newtype EvalM a = EvalM { runEval :: StateT Environment IO a }

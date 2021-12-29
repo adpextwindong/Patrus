@@ -15,12 +15,12 @@ spec = do
             parseProgram "foo(3);" `shouldBe` [ExprStatement (Call (Var "foo") [Lit (NumberLit 3.0)])]
         it "successfully parses function call with only one argument" $ do
             parseProgram "foo(3,4);" `shouldBe` [ExprStatement (Call (Var "foo") [Lit (NumberLit 3.0), Lit (NumberLit 4.0)])]
-        it "successfully parses callback evaluation and creation in the same expr" $ do
-            parseProgram "foo(1,2,3)(true)(nil);" `shouldBe` [ExprStatement (Call 
+        it "successfully parses curried functions" $ do
+            parseProgram "foo(1,2,3)(true)(nil);" `shouldBe` [ExprStatement (Call
                                                                                 (Call
                                                                                     (Call (Var "foo")
                                                                                         [Lit (NumberLit 1.0),Lit (NumberLit 2.0),Lit (NumberLit 3.0)])
-                                                                                    
+
                                                                                     [Lit (BoolLit True)])
-                                                                                
+
                                                                                 [Lit Nil])]

@@ -1327,25 +1327,49 @@ Gets desguared to:
 
 ### [10.1 - Function Calls](https://craftinginterpreters.com/functions.html#function-calls)
 
-TODO fix calls like this
-
-```lox
-foo()();
-```
-
 ```
 call → primary ( "(" arguments? ")" )* ;
 ```
+This part took some work. It seems like splitting out optional/zero-or-more clauses into a seperate nonterminal is the easiest way to get a shift/reduce conflict free grammar.
+
+To handle parsing programs like
+
+```lox
+foo(1,2,3)(true)(nil);
+```
+
+I needed some way of nesting call expressions _correctly_.
+
+```happy
+Call :: { Expr }
+Call : Primary { $1 }
+     | Primary Calls { $2 $1 }
+
+--We pass in the identifier of the first callee then it will nest calls for foo()() correctly
+Calls :: { Expr -> Expr }
+Calls : LEFT_PAREN RIGHT_PAREN Calls            { \callee -> $3 (Call callee []) }
+      | LEFT_PAREN Arguments RIGHT_PAREN Calls  { \callee -> $4 (Call callee $2) }
+      | LEFT_PAREN RIGHT_PAREN                  { \callee -> Call callee [] }
+      | LEFT_PAREN Arguments RIGHT_PAREN        { \callee -> Call callee $2 }
+```
+
+I also needed some way of passing in the original callee name ($1 in Call nonterminal) to build the expression correctly. I can't simply use $1 as an argument to the Calls nonterminal because $1 is only accessible to the Haskell level of Happy. Therefore I decided to have Calls pass back a function to supply the original name. This also stoned two birds at once and made recursively building the further curried arguments easier.
 
 parseProgram "foo(1,2,3)(true)(nil);"
 
 ```
-[ExprStatement (Call 
+[ExprStatement (Call
                     (Call
                         (Call (Var "foo")
                             [Lit (NumberLit 1.0),Lit (NumberLit 2.0),Lit (NumberLit 3.0)])
-                        
+
                         [Lit (BoolLit True)])
-                    
+
                     [Lit Nil])]
 ```
+
+#### [10.1.1 - Maximum argument counts](https://craftinginterpreters.com/functions.html#maximum-argument-counts)
+
+--TODO max arg counts error handling
+
+Skipping this for now until we come back to parser error handling

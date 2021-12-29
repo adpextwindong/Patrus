@@ -178,12 +178,18 @@ Unary : BANG Unary                              { UOp Not $2 }
 
 Call :: { Expr }
 Call : Primary { $1 }
-     | Primary LEFT_PAREN RIGHT_PAREN { Call $1 [] }
-     | Primary LEFT_PAREN Arguments { Call $1 $3 }
+     | Primary Calls { $2 $1 }
+
+--We pass in the identifier of the first callee then it will nest calls for foo()() correctly
+Calls :: { Expr -> Expr }
+Calls : LEFT_PAREN RIGHT_PAREN Calls            { \callee -> $3 (Call callee []) }
+      | LEFT_PAREN Arguments RIGHT_PAREN Calls  { \callee -> $4 (Call callee $2) }
+      | LEFT_PAREN RIGHT_PAREN                  { \callee -> Call callee [] }
+      | LEFT_PAREN Arguments RIGHT_PAREN        { \callee -> Call callee $2 }
 
 Arguments :: { [Expr] }
 Arguments : Expr COMMA Arguments { $1 : $3 }
-          | Expr RIGHT_PAREN { [$1] }
+          | Expr { [$1] }
 
 Primary :: { Expr }
 Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit (StringLit s)) $1 }

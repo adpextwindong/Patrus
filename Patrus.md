@@ -1336,3 +1336,16 @@ foo()();
 ```
 call → primary ( "(" arguments? ")" )* ;
 ```
+
+parseProgram "foo(1,2,3)(true)(nil);"
+
+```
+[ExprStatement (Call 
+                    (Call
+                        (Call (Var "foo")
+                            [Lit (NumberLit 1.0),Lit (NumberLit 2.0),Lit (NumberLit 3.0)])
+                        
+                        [Lit (BoolLit True)])
+                    
+                    [Lit Nil])]
+```

@@ -1373,3 +1373,23 @@ parseProgram "foo(1,2,3)(true)(nil);"
 --TODO max arg counts error handling
 
 Skipping this for now until we come back to parser error handling
+
+#### [10.1.2 - Interpeting function calls](https://craftinginterpreters.com/functions.html#interpreting-function-calls)
+
+The evaluation semmantics for Jlox's visitCallExpr can be seen with this example in the interpretter.
+
+```lox
+var x = 5;
+var y = 5;
+var z = 5;
+
+var q = 0;
+
+q((x=1),(y=1),(z=1));
+
+print x;
+print y;
+print z;
+```
+
+Type checking occurs after function argument evaluation.

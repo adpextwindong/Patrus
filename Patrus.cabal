@@ -30,6 +30,7 @@ library
                    ,transformers
                    ,mtl >= 2.2.2
                    ,extra
+                   ,time
     exposed-modules:
         Patrus.Parser
         Patrus.Lexer

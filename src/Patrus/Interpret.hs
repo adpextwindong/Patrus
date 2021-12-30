@@ -9,6 +9,8 @@ import Patrus.Eval
 import Patrus.Environment
 import Patrus.Types
 
+import qualified Data.Map.Strict as M
+
 runEvalM :: EvalM Expr -> Environment -> IO (Expr, Environment)
 runEvalM x = runStateT (runEval x)
 
@@ -59,8 +61,12 @@ interpretM w@((WhileStatement conde body):xs) = do
     then interpretM [body] >> interpretM w
     else interpretM xs
 
+baseGlobalEnv = Env baseScope EmptyEnv
+    where baseScope = M.fromList [clock]
+          clock = ("clock", NativeFunc Clock []) --impl in eval...
+
 interpretProgram :: Program -> IO Environment
-interpretProgram p = execStateT (runEval $ interpretM p) EmptyEnv
+interpretProgram p = execStateT (runEval $ interpretM p) baseGlobalEnv
 
 runProgram :: Program -> IO (Program, Environment)
-runProgram p = runStateT (runEval $ interpretM p) EmptyEnv
+runProgram p = runStateT (runEval $ interpretM p) baseGlobalEnv

@@ -4,6 +4,7 @@ module Patrus.Eval where
 import Debug.Trace
 import GHC.Float
 import Prelude hiding (EQ,LT,GT)
+import Data.Time.Clock
 
 import Control.Monad.IO.Class
 import Control.Monad.State.Class (MonadState (..))
@@ -33,6 +34,24 @@ eval (Assignment i e) = do
    e' <- eval e
    put =<< adjustEnvFM i e' =<< get
    return e'
+
+eval (NativeFunc Clock []) = do
+    picoseconds <- liftIO $ fromIntegral . diffTimeToPicoseconds . utctDayTime <$> getCurrentTime
+    let seconds = picoseconds / fromIntegral 10^^12
+
+    return $ Lit $ NumberLit $ seconds
+
+
+eval (Call callee args) = do
+    callee' <- eval callee
+    args' <- mapM eval args
+    --TODO typecheck callee
+    case callee' of
+        e@(NativeFunc _ _ ) -> eval e
+        otherwise -> do
+            callTyCheck callee'
+            arityCheck (parameters callee') args'
+            return undefined
 
 eval (Group e) = eval e
 eval (UOp Negate e) = do
@@ -88,6 +107,16 @@ sameLitType (Lit (NumberLit _)) (Lit (NumberLit _)) = True
 sameLitType (Lit (StringLit _)) (Lit (StringLit _)) = True
 sameLitType (Lit (BoolLit _)) (Lit (BoolLit _)) = True
 sameLitType _ _ = False
+
+callTyCheck :: Expr -> EvalM Expr
+callTyCheck e@(Func _) = return e
+callTyCheck e@(Class) = return e
+callTyCheck e = fail $ "Can only call functions and classes."
+
+arityCheck :: [Identifier] -> [Expr] -> EvalM ()
+arityCheck params args = if length params == length args
+                         then return ()
+                         else fail $ "Expected " <> show (length params) <> " arguments but got " <> show (length args) <> "."
 
 evalTruthy :: ComparrisonOp -> Expr -> Expr -> EvalM Expr
 evalTruthy operator e1 e2 = do

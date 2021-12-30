@@ -44,7 +44,20 @@ data Expr = BOp BinOp Expr Expr
           | Var Identifier
           | Assignment Identifier Expr
           | Call Expr [Expr]
+          | Func {
+                parameters :: [Identifier] --TODO
+          }
+          | NativeFunc {
+                nativeFuncTag :: NativeTag
+               ,parameters :: [Identifier]
+          }
+          | Class --TODO
             deriving (Show, Eq)
+
+--IO() can't have an EQ instance so dispatching on this tag will be less of a hassle for now
+--Tag for native function
+data NativeTag = Clock
+    deriving (Show, Eq)
 
 data Environment = Env {
                        scope :: M.Map Identifier Expr

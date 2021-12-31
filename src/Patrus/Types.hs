@@ -14,6 +14,7 @@ type Identifier = String
 data Statement = ExprStatement Expr
                | PrintStatement Expr
                | VarDeclaration Identifier (Maybe Expr)
+               | FunStatement Identifier [Identifier] Statement
                | BlockStatement [Statement]
                | IfStatement Expr Statement (Maybe Statement)
                | WhileStatement Expr Statement
@@ -46,6 +47,7 @@ data Expr = BOp BinOp Expr Expr
           | Call Expr [Expr]
           | Func {
                 parameters :: [Identifier] --TODO
+               ,body :: Statement
           }
           | NativeFunc {
                 nativeFuncTag :: NativeTag

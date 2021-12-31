@@ -109,7 +109,7 @@ sameLitType (Lit (BoolLit _)) (Lit (BoolLit _)) = True
 sameLitType _ _ = False
 
 callTyCheck :: Expr -> EvalM Expr
-callTyCheck e@(Func _) = return e
+callTyCheck e@(Func _ _) = return e
 callTyCheck e@(Class) = return e
 callTyCheck e = fail $ "Can only call functions and classes."
 

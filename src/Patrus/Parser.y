@@ -86,8 +86,22 @@ Declarations : Declarations Declaration { $2 : $1 }
            | {- empty -} { [] }
 
 Declaration :: { Statement }
-Declaration : VarDecl                   { $1 }
+Declaration : FunDecl                   { $1 }
+            | VarDecl                   { $1 }
             | Statement                 { $1 }
+
+FunDecl :: { Statement }
+FunDecl : FUN Function                  { $2 }
+
+Function :: { Statement }
+Function : TIdentifier LEFT_PAREN RIGHT_PAREN Block { FunStatement (tis $1) [] $4 }
+         |  TIdentifier LEFT_PAREN FunctionParams RIGHT_PAREN Block { FunStatement (tis $1) $3 $5 }
+
+
+FunctionParams :: { [Identifier] }
+FunctionParams : TIdentifier COMMA FunctionParams { (tis $1) : $3 }
+               | TIdentifier { [tis $1] }
+
 
 VarDecl :: {Statement }
 VarDecl : VAR TIdentifier EQUAL Expr SEMICOLON            { (\(TIdentifier s _) e -> VarDeclaration s (Just e)) $2 $4 }
@@ -201,6 +215,7 @@ Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit 
         | TIdentifier                           { (\(TIdentifier s _) -> Var s) $1 }
 
 {
+tis (TIdentifier s _ ) = s
 
 parseError :: [Token] -> Except String a
 parseError (l:ls) = throwError (show l)

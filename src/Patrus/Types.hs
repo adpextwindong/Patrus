@@ -44,17 +44,20 @@ data Expr = BOp BinOp Expr Expr
           | Group Expr
           | Var Identifier
           | Assignment Identifier Expr
+          | Func Function
           | Call Expr [Expr]
-          | Func {
-                parameters :: [Identifier] --TODO
-               ,body :: Statement
-          }
-          | NativeFunc {
+                    | NativeFunc {
                 nativeFuncTag :: NativeTag
-               ,parameters :: [Identifier]
+               ,callparameters :: [Identifier]
           }
           | Class --TODO
+          | Unit --TODO remove after we figure out return statements
             deriving (Show, Eq)
+
+data Function = Function {
+                fnparameters :: [Identifier]
+               ,body :: Statement
+          } deriving (Show, Eq)
 
 --IO() can't have an EQ instance so dispatching on this tag will be less of a hassle for now
 --Tag for native function

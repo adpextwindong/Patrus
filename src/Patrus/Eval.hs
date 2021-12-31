@@ -48,10 +48,12 @@ eval (Call callee args) = do
     --TODO typecheck callee
     case callee' of
         e@(NativeFunc _ _ ) -> eval e
-        otherwise -> do
-            callTyCheck callee'
-            arityCheck (parameters callee') args'
-            return undefined
+        e@(Func (Function params body)) -> do
+            callTyCheck callee' --Maybe hoist this to case so we can split callee into pieces
+            arityCheck params args'
+            let bindings = undefined --TODO zip params and args
+            (retVal, _) <- withFuncEnv bindings $ interpretM [body]
+            return retVal
 
 eval (Group e) = eval e
 eval (UOp Negate e) = do
@@ -109,7 +111,7 @@ sameLitType (Lit (BoolLit _)) (Lit (BoolLit _)) = True
 sameLitType _ _ = False
 
 callTyCheck :: Expr -> EvalM Expr
-callTyCheck e@(Func _ _) = return e
+callTyCheck e@(Func _) = return e
 callTyCheck e@(Class) = return e
 callTyCheck e = fail $ "Can only call functions and classes."
 
@@ -154,3 +156,53 @@ literalTruth :: Expr -> Bool
 literalTruth (Lit Nil) = False
 literalTruth (Lit (BoolLit False)) = False
 literalTruth _ = True
+
+-- interpretFunctionM :: Function -> EvalM Expr
+-- interpretFunctionM
+
+interpretM :: Program -> EvalM (Expr, Program)
+interpretM [] = return (Unit,[])
+interpretM ((PrintStatement e): xs) = do
+    e' <- eval e
+    liftIO $ print $ "PRINT: " <> show e'
+    interpretM xs
+
+interpretM ((DumpStatement) : xs) = do
+    env <- get
+    liftIO $ print $ "DUMP: " <> show env
+    interpretM xs
+
+interpretM ((ExprStatement e) : xs) = do
+    _ <- eval e
+    interpretM xs
+
+interpretM ((VarDeclaration i Nothing) : xs) = do
+    modifyEnv $ insertEnv i (Lit Nil)
+    interpretM xs
+
+interpretM (VarDeclaration i (Just e) : xs) = do
+    e' <- eval e
+    modifyEnv (insertEnv i e')
+    interpretM xs
+
+interpretM ((BlockStatement bs):xs) = do
+    withFreshEnv (interpretM bs)
+    interpretM xs
+
+interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
+    e <- eval conde
+
+    if literalTruth e
+    then interpretM [trueBranch]
+    else case falseBranch of
+        Just fb -> interpretM [fb]
+        Nothing -> pure (Unit,[])
+
+    interpretM xs
+
+interpretM w@((WhileStatement conde body):xs) = do
+    e <- eval conde
+
+    if literalTruth e
+    then interpretM [body] >> interpretM w
+    else interpretM xs

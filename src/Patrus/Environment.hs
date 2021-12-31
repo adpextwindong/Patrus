@@ -37,5 +37,15 @@ popEnv (Env _ p) = p
 withFreshEnv :: EvalM a -> EvalM ()
 withFreshEnv f = modifyEnv (pushFreshEnv) >> f >> modifyEnv (popEnv)
 
+pushFuncEnv :: [(Identifier, Expr)] -> Environment -> Environment
+pushFuncEnv bindings env = Env (M.fromList bindings) env
+
+withFuncEnv :: [(Identifier, Expr)] -> EvalM a -> EvalM a
+withFuncEnv bindings f = do
+    modifyEnv $ pushFuncEnv bindings
+    e <- f
+    modifyEnv popEnv
+    return e
+
 modifyEnv :: (Environment -> Environment) -> EvalM ()
 modifyEnv f = get >>= (put . f)

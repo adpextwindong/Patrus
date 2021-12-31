@@ -1393,3 +1393,5 @@ print z;
 ```
 
 Type checking occurs after function argument evaluation.
+
+TODO add a spectest for all native functions

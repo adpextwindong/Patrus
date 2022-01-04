@@ -19,6 +19,7 @@ data Statement = ExprStatement Expr
                | IfStatement Expr Statement (Maybe Statement)
                | WhileStatement Expr Statement
                | DumpStatement
+               | ReturnStatement (Maybe Expr)
                deriving (Show, Eq)
 
 data ComparrisonOp = EQ | NEQ | LT | LTE | GT | GTE

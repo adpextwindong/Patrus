@@ -206,3 +206,8 @@ interpretM w@((WhileStatement conde body):xs) = do
     if literalTruth e
     then interpretM [body] >> interpretM w
     else interpretM xs
+
+interpretM ((ReturnStatement Nothing): xs) = return (Lit Nil, xs)
+interpretM ((ReturnStatement (Just e)): xs) = do
+    e' <- eval e
+    return (e', xs)

@@ -26,3 +26,5 @@ spec = do
                                                                                 [Lit Nil])]
         it "successfully parses function declaration" $ do
             parseProgram "fun add(x,y) { x + y; }" `shouldBe` [FunStatement "add" ["x","y"] (BlockStatement [ExprStatement (BOp Plus (Var "x") (Var "y"))])] --TODO switch to return statement after 10.5
+        it "successfully parses return statements" $ do
+            parseProgram "return 5;" `shouldBe` [ReturnStatement (Just (Lit (NumberLit 5.0)))]

@@ -34,9 +34,6 @@ pushFreshEnv parentEnv = Env M.empty parentEnv
 popEnv :: Environment -> Environment
 popEnv (Env _ p) = p
 
-withFreshEnv :: EvalM a -> EvalM ()
-withFreshEnv f = modifyEnv (pushFreshEnv) >> f >> modifyEnv (popEnv)
-
 pushFuncEnv :: [(Identifier, Expr)] -> Environment -> Environment
 pushFuncEnv bindings env = Env (M.fromList bindings) env
 

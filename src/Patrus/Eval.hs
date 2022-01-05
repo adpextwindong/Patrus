@@ -45,14 +45,13 @@ eval (NativeFunc Clock []) = do
 eval (Call callee args) = do
     callee' <- eval callee
     args' <- mapM eval args
-    --TODO typecheck callee
     case callee' of
         e@(NativeFunc _ _ ) -> eval e
         e@(Func (Function params body)) -> do
-            callTyCheck callee' --Maybe hoist this to case so we can split callee into pieces
+            callTyCheck callee'
             arityCheck params args'
-            let bindings = undefined --TODO zip params and args section 10.4
-            (retVal, _) <- withFuncEnv bindings $ interpretM [body]
+            let bindings = zip params args'
+            rv@(retVal, _) <- withFuncEnv bindings $ interpretM [body]
             return retVal
 
 eval (Group e) = eval e
@@ -157,9 +156,6 @@ literalTruth (Lit Nil) = False
 literalTruth (Lit (BoolLit False)) = False
 literalTruth _ = True
 
--- interpretFunctionM :: Function -> EvalM Expr
--- interpretFunctionM
-
 interpretM :: Program -> EvalM (Expr, Program)
 interpretM [] = return (Unit,[])
 interpretM ((PrintStatement e): xs) = do
@@ -185,9 +181,7 @@ interpretM (VarDeclaration i (Just e) : xs) = do
     modifyEnv (insertEnv i e')
     interpretM xs
 
-interpretM ((BlockStatement bs):xs) = do
-    withFreshEnv (interpretM bs)
-    interpretM xs
+interpretM ((BlockStatement bs):xs) = withFuncEnv [] (interpretM bs)
 
 interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
     e <- eval conde
@@ -208,9 +202,7 @@ interpretM w@((WhileStatement conde body):xs) = do
     else interpretM xs
 
 interpretM ((ReturnStatement Nothing): xs) = return (Lit Nil, xs)
-interpretM ((ReturnStatement (Just e)): xs) = do
-    e' <- eval e
-    return (e', xs)
+interpretM ((ReturnStatement (Just e)): xs) = eval e >>= (\e' -> return (e',xs))
 
 interpretM ((FunStatement name args body) : xs) = do
     let e = Func $ Function args body

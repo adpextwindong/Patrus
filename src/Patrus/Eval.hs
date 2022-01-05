@@ -51,7 +51,7 @@ eval (Call callee args) = do
         e@(Func (Function params body)) -> do
             callTyCheck callee' --Maybe hoist this to case so we can split callee into pieces
             arityCheck params args'
-            let bindings = undefined --TODO zip params and args
+            let bindings = undefined --TODO zip params and args section 10.4
             (retVal, _) <- withFuncEnv bindings $ interpretM [body]
             return retVal
 

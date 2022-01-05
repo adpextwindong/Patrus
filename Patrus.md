@@ -1325,7 +1325,11 @@ Gets desguared to:
 
 ## [10 - Functions](https://craftinginterpreters.com/functions.html)
 
+Skipped error handling parts: 10.1.1,
+
 ### [10.1 - Function Calls](https://craftinginterpreters.com/functions.html#function-calls)
+
+Commit ca356a9
 
 ```
 call → primary ( "(" arguments? ")" )* ;
@@ -1370,7 +1374,7 @@ parseProgram "foo(1,2,3)(true)(nil);"
 
 #### [10.1.1 - Maximum argument counts](https://craftinginterpreters.com/functions.html#maximum-argument-counts)
 
---TODO max arg counts error handling
+SKIPPED max arg counts error handling
 
 Skipping this for now until we come back to parser error handling
 
@@ -1394,4 +1398,34 @@ print z;
 
 Type checking occurs after function argument evaluation.
 
-TODO add a spectest for all native functions
+#### [10.1.3 - Call type errors](https://craftinginterpreters.com/functions.html#call-type-errors)
+
+TODO Commit 0636fa
+
+#### [10.1.4 - Checking arity](https://craftinginterpreters.com/functions.html#checking-arity)
+
+TODO Commit 0636fa
+
+### [10.2 - Native Functions](https://craftinginterpreters.com/functionsctions.html#native-fun)
+
+TODO Commit 0636fa
+
+#### [10.2.1 - Telling time](https://craftinginterpreters.com/functions.html#native-functions)
+
+TODO Commit 0636fa
+
+### [10.3 - Function Declarations](https://craftinginterprete.html#function-drs.com/functionseclarations)
+
+TODO Commit d109c0
+
+### [10.4 - Function Objects](https://craftinginterpreters.com/functions.html#function-objects)
+
+Note this presentation order could be redone. It was much easier to add return statements. 1/5/22
+
+TODO
+
+Commits 711631
+
+### [10.5 - Return Statements](https://craftinginterpreters.com/functions.html#return-statements)
+
+TODO Commits fc1820, 1979f, 1efcdd

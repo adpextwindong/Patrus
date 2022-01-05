@@ -212,4 +212,7 @@ interpretM ((ReturnStatement (Just e)): xs) = do
     e' <- eval e
     return (e', xs)
 
-interpretM ((FunStatement name args body) : xs) = trace ("TODO function declaration 10.4 10.4.1 ") undefined
+interpretM ((FunStatement name args body) : xs) = do
+    let e = Func $ Function args body
+    modifyEnv (insertEnv name e)
+    interpretM xs

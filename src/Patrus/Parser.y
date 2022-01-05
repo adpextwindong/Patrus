@@ -141,6 +141,11 @@ SimpleStmt : ExprStatement  { $1 }
            | PrintStatement { $1 }
            | Block          { $1 }
            | DumpStatement  { $1 }
+           | ReturnStatement { $1 }
+
+ReturnStatement :: { Statement }
+ReturnStatement : RETURN SEMICOLON { ReturnStatement Nothing }
+                | RETURN Expr SEMICOLON { ReturnStatement (Just $2) }
 
 Block : LEFT_BRACE Declarations RIGHT_BRACE { BlockStatement (reverse $2) }
 

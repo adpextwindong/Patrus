@@ -189,10 +189,8 @@ interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
     if literalTruth e
     then interpretM [trueBranch]
     else case falseBranch of
-        Just fb -> interpretM [fb]
-        Nothing -> pure (Unit,[])
-
-    interpretM xs
+        Just fb -> interpretM [fb] >> interpretM xs
+        Nothing -> interpretM xs
 
 interpretM w@((WhileStatement conde body):xs) = do
     e <- eval conde

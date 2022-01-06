@@ -1429,3 +1429,11 @@ Commits 711631
 ### [10.5 - Return Statements](https://craftinginterpreters.com/functions.html#return-statements)
 
 TODO Commits fc1820, 1979f, 1efcdd
+
+Now this program works as expected.
+
+```
+ip "fun fib(n) { if (n <= 1) return n; else { return fib(n - 2) + fib(n - 1); } print fib(20);}"
+
+"PRINT: Lit (NumberLit 6765.0)"
+```

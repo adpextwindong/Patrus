@@ -98,7 +98,9 @@ literalBopTyMatch operator e1 e2 = do
     e2 <- eval e2
     if not $ sameLitType e1 e2
     then case operator of
-            Plus -> fail plusTyMismatch
+            Plus -> do
+                liftIO $ print $ "ATTEMPTED: " <> show operator <> " " <> show e1 <> " " <> show e2
+                fail plusTyMismatch
             _    -> fail bopTyMismatch
     else
         pure (e1,e2)
@@ -157,6 +159,7 @@ literalTruth (Lit (BoolLit False)) = False
 literalTruth _ = True
 
 interpretM :: Program -> EvalM (Expr, Program)
+--interpretM ps | trace ("\nTRICK " <> show ps) False = undefined
 interpretM [] = return (Unit,[])
 interpretM ((PrintStatement e): xs) = do
     e' <- eval e
@@ -186,15 +189,22 @@ interpretM ((BlockStatement bs):xs) = withFuncEnv [] (interpretM bs)
 interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
     e <- eval conde
 
-    if literalTruth e
-    then interpretM [trueBranch]
-    else case falseBranch of
-        Just fb -> interpretM [fb] >> interpretM xs
-        Nothing -> interpretM xs
+    blockVal <- if literalTruth e
+                then interpretM [trueBranch]
+                else case falseBranch of
+                    Just fb -> interpretM [fb]
+                    Nothing -> interpretM []
+
+    case blockVal of
+        (Unit,[]) -> interpretM xs
+        _ -> return blockVal --ife branches returned something so we must return it
+
+    --TODO refactor EvalM to handle this better
 
 interpretM w@((WhileStatement conde body):xs) = do
     e <- eval conde
 
+    --TODO test for similar Unit handling. Any block interpretting code needs to deal with returns...
     if literalTruth e
     then interpretM [body] >> interpretM w
     else interpretM xs

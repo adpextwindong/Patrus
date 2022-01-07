@@ -44,12 +44,12 @@ Having tests for these too would be nice. See [examples\lox](examples\lox).
         - [x] If-else
         - [x] While
         - [x] C-style forloop
-    - [ ] Function Declaration
-        - [ ] Nil as default return value if return ommited.
+    - [x] Function Declaration
+        - [x] Nil as default return value if return ommited.
     - [ ] Class Declaration
     - [ ] Class Instance Creation Statement
-- [ ] Functions
-    - [ ] Function Call
+- [x] Functions
+    - [x] Function Call
     - [ ] First Class Functions
 - [ ] Closures
 - [ ] Classes

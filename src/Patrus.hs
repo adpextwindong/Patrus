@@ -6,6 +6,7 @@ module Patrus
      ,module Patrus.Interpret
      ,module Patrus.Eval
      ,ip
+     ,runPF
      ) where
 
 import Patrus.Types
@@ -15,4 +16,8 @@ import Patrus.Environment
 import Patrus.Interpret
 import Patrus.Eval
 
+ip :: String -> IO Environment
 ip = interpretProgram . parseProgram
+
+runPF :: FilePath -> IO Environment
+runPF fp = ip =<< readFile fp

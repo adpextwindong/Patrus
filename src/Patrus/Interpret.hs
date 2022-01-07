@@ -26,5 +26,5 @@ interpretProgram p = execStateT (runEval $ interpretM p) baseGlobalEnv
 -- Return statements will give back an expression (to be used by Eval)
 -- Otherwise Unit is returned.
 -- TODO think about this some more... 02:34 01-Jan-22
-runProgram :: Program -> IO ((Expr, Program), Environment)
+runProgram :: Program -> IO (Expr, Environment)
 runProgram p = runStateT (runEval $ interpretM p) baseGlobalEnv

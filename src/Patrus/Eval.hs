@@ -46,13 +46,16 @@ eval (Call callee args) = do
     callee' <- eval callee
     args' <- mapM eval args
     case callee' of
-        e@(NativeFunc _ _ ) -> eval e
+        e@(NativeFunc _ _ ) -> eval e         --Now that callee' is fully evaluated we can pattern match again
         e@(Func (Function params body)) -> do
             callTyCheck callee'
             arityCheck params args'
             let bindings = zip params args'
-            rv@(retVal, _) <- withFuncEnv bindings $ interpretM [body]
-            return retVal
+            retVal <- withFuncEnv bindings $ interpretM [body]
+
+            case retVal of
+                Unit -> return $ Lit Nil
+                _ -> return retVal
 
 eval (Group e) = eval e
 eval (UOp Negate e) = do
@@ -158,9 +161,12 @@ literalTruth (Lit Nil) = False
 literalTruth (Lit (BoolLit False)) = False
 literalTruth _ = True
 
-interpretM :: Program -> EvalM (Expr, Program)
+interpretM :: Program -> EvalM Expr
 --interpretM ps | trace ("\nTRICK " <> show ps) False = undefined
-interpretM [] = return (Unit,[])
+
+--Unit is currently a signal to any Block interpretter that a return value has happened.
+--This approach as it is currently does not feel correct.
+interpretM [] = return Unit
 interpretM ((PrintStatement e): xs) = do
     e' <- eval e
     liftIO $ print $ "PRINT: " <> show e'
@@ -186,6 +192,7 @@ interpretM (VarDeclaration i (Just e) : xs) = do
 
 interpretM ((BlockStatement bs):xs) = withFuncEnv [] (interpretM bs)
 
+--1/7/22 TODO this is begging us to have an interpretBlock function
 interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
     e <- eval conde
 
@@ -196,7 +203,7 @@ interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
                     Nothing -> interpretM []
 
     case blockVal of
-        (Unit,[]) -> interpretM xs
+        Unit -> interpretM xs
         _ -> return blockVal --ife branches returned something so we must return it
 
     --TODO refactor EvalM to handle this better
@@ -209,8 +216,8 @@ interpretM w@((WhileStatement conde body):xs) = do
     then interpretM [body] >> interpretM w
     else interpretM xs
 
-interpretM ((ReturnStatement Nothing): xs) = return (Lit Nil, xs)
-interpretM ((ReturnStatement (Just e)): xs) = eval e >>= (\e' -> return (e',xs))
+interpretM ((ReturnStatement Nothing): xs) = return $ Lit Nil
+interpretM ((ReturnStatement (Just e)): xs) = eval e
 
 interpretM ((FunStatement name args body) : xs) = do
     let e = Func $ Function args body

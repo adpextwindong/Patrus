@@ -45,7 +45,7 @@ data Expr = BOp BinOp Expr Expr
           | Group Expr
           | Var Identifier
           | Assignment Identifier Expr
-          | Func Function
+          | Func Function Environment
           | Call Expr [Expr]
                     | NativeFunc {
                 nativeFuncTag :: NativeTag

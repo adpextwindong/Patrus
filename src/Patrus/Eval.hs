@@ -47,7 +47,7 @@ eval (Call callee args) = do
     args' <- mapM eval args
     case callee' of
         e@(NativeFunc _ _ ) -> eval e         --Now that callee' is fully evaluated we can pattern match again
-        e@(Func (Function params body)) -> do
+        e@(Func (Function params body) closure) -> do --TODO closures
             callTyCheck callee'
             arityCheck params args'
             let bindings = zip params args'
@@ -115,7 +115,7 @@ sameLitType (Lit (BoolLit _)) (Lit (BoolLit _)) = True
 sameLitType _ _ = False
 
 callTyCheck :: Expr -> EvalM Expr
-callTyCheck e@(Func _) = return e
+callTyCheck e@(Func _ _) = return e
 callTyCheck e@(Class) = return e
 callTyCheck e = fail $ "Can only call functions and classes."
 
@@ -220,6 +220,7 @@ interpretM ((ReturnStatement Nothing): xs) = return $ Lit Nil
 interpretM ((ReturnStatement (Just e)): xs) = eval e
 
 interpretM ((FunStatement name args body) : xs) = do
-    let e = Func $ Function args body
+    closure <- get
+    let e = Func (Function args body) closure
     modifyEnv (insertEnv name e)
     interpretM xs

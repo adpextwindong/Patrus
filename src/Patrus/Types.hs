@@ -52,7 +52,6 @@ data Expr = BOp BinOp Expr Expr
                ,callparameters :: [Identifier]
           }
           | Class --TODO
-          | Unit --TODO remove after we figure out return statements
             deriving (Show, Eq)
 
 data Function = Function {

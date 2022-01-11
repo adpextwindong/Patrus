@@ -51,11 +51,11 @@ eval (Call callee args) = do
             callTyCheck callee'
             arityCheck params args'
             let bindings = zip params args'
-            retVal <- withFuncEnv bindings $ interpretM [body]
+            retVal <- withFuncEnv bindings $ interpret body
 
             case retVal of
-                Unit -> return $ Lit Nil
-                _ -> return retVal
+                RetVal rv -> return rv
+                _ -> return $ Lit Nil
 
 eval (Group e) = eval e
 eval (UOp Negate e) = do
@@ -161,66 +161,65 @@ literalTruth (Lit Nil) = False
 literalTruth (Lit (BoolLit False)) = False
 literalTruth _ = True
 
-interpretM :: Program -> EvalM Expr
+--Taking a page out of Thomas-Neil's hlox.
+--Its either this or use ExceptT/ContT for control flow probably.
+--
+data Action = None
+            | Stop
+            | RetVal Expr
+
+interpretM :: Statement -> EvalM Action
 --interpretM ps | trace ("\nTRICK " <> show ps) False = undefined
 
 --Unit is currently a signal to any Block interpretter that a return value has happened.
 --This approach as it is currently does not feel correct.
-interpretM [] = return Unit
-interpretM ((PrintStatement e): xs) = do
+interpretM (PrintStatement e) = do
     e' <- eval e
     liftIO $ print $ "PRINT: " <> show e'
-    interpretM xs
+    return None
 
-interpretM ((DumpStatement) : xs) = do
+interpretM (DumpStatement) = do
     env <- get
-    liftIO $ print $ "DUMP: " <> show env
-    interpretM xs
+    liftIO $ print $ ("DUMP: " <> show env)
+    return None
 
-interpretM ((ExprStatement e) : xs) = do
-    _ <- eval e
-    interpretM xs
-
-interpretM ((VarDeclaration i Nothing) : xs) = do
+interpretM (ExprStatement e) = eval e >> return None
+interpretM (VarDeclaration i Nothing) = do
     modifyEnv $ insertEnv i (Lit Nil)
-    interpretM xs
+    return None
 
-interpretM (VarDeclaration i (Just e) : xs) = do
-    e' <- eval e
-    modifyEnv (insertEnv i e')
-    interpretM xs
+interpretM (VarDeclaration i (Just e)) = do
+    (\e' -> modifyEnv (insertEnv i e')) =<< eval e
+    return None
 
-interpretM ((BlockStatement bs):xs) = withFuncEnv [] (interpretM bs)
-
---1/7/22 TODO this is begging us to have an interpretBlock function
-interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
-    e <- eval conde
-
-    blockVal <- if literalTruth e
-                then interpretM [trueBranch]
-                else case falseBranch of
-                    Just fb -> interpretM [fb]
-                    Nothing -> interpretM []
-
-    case blockVal of
-        Unit -> interpretM xs
-        _ -> return blockVal --ife branches returned something so we must return it
-
-    --TODO refactor EvalM to handle this better
-
-interpretM w@((WhileStatement conde body):xs) = do
-    e <- eval conde
-
-    --TODO test for similar Unit handling. Any block interpretting code needs to deal with returns...
-    if literalTruth e
-    then interpretM [body] >> interpretM w
-    else interpretM xs
-
-interpretM ((ReturnStatement Nothing): xs) = return $ Lit Nil
-interpretM ((ReturnStatement (Just e)): xs) = eval e
-
-interpretM ((FunStatement name args body) : xs) = do
+interpretM (FunStatement name args body) = do
     closure <- get
     let e = Func (Function args body) closure
     modifyEnv (insertEnv name e)
-    interpretM xs
+    return None
+
+interpret (IfStatement conde trueBranch falseBranch) = do
+    e <- eval conde
+
+    if literalTruth e
+    then interpret trueBranch
+    else case falseBranch of
+        Just fb -> interpret fb
+        Nothing -> return None
+
+interpret w@(WhileStatement conde body) = do
+    e <- eval conde
+
+    if literalTruth e
+    then do
+        rv <- interpret body
+        case rv of
+            None -> interpret w
+            _ -> return rv
+
+    else return None
+
+interpret (ReturnStatement Nothing) = return $ RetVal $ Lit Nil
+interpret (ReturnStatement (Just e)) = eval e >>= \e -> return $ RetVal e
+
+interpret (BlockStatement xs) = undefined --TODO

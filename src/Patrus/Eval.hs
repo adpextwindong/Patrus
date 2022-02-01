@@ -11,6 +11,7 @@ import Control.Monad.State.Class (MonadState (..))
 
 import Patrus.Environment
 import Patrus.Types
+import Patrus.Eval.Pure (evalBop, sameLitType, literalTruth)
 
 uopTyMismatch = "Operand must be a number."
 bopTyMismatch = "Operands must be numbers."
@@ -75,23 +76,7 @@ eval (BOp Or e1 e2) = evalTruthyShortCircuit Or e1 e2
 -- Sub expressions need to be evaluated and type mismatches should be handled.
 eval (BOp operator e1 e2) = do
     (e1,e2) <- literalBopTyMatch operator e1 e2
-    evalBop operator e1 e2
-
--- Handles all nonTruthy operators
-evalBop :: BinOp -> Expr -> Expr -> EvalM Expr
-evalBop (Cmp LT)  (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a < b
-evalBop (Cmp LTE) (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a <= b
-evalBop (Cmp GT)  (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a > b
-evalBop (Cmp GTE) (Lit (NumberLit a)) (Lit (NumberLit b)) = pure $ Lit $ BoolLit $ a >= b
-
-evalBop Plus (Lit (StringLit s1)) (Lit (StringLit s2)) = pure $ Lit $ StringLit (s1 <> s2)
-evalBop Plus (Lit (NumberLit x)) (Lit (NumberLit y))   = pure $ Lit $ NumberLit (x + y)
-evalBop Minus (Lit (NumberLit x)) (Lit (NumberLit y))  = pure $ Lit $ NumberLit (x - y)
-evalBop Mul (Lit (NumberLit x)) (Lit (NumberLit y))    = pure $ Lit $ NumberLit (x * y)
-evalBop Div (Lit (NumberLit x)) (Lit (NumberLit y))    = pure $ Lit $ NumberLit (x / y)
-
-evalBop _ _ _ = fail $ bopTyMismatch
---evalBop op e1 e2 = trace ("EXHAUST: "<> show op <> " " <> show e1 <> " " <> show e2) $ undefined
+    pure $ evalBop operator e1 e2
 
 -- | Performs strict type matching for PLUS/MINUS/DIV/MUL/LT/LTE/GT/GTE
 -- Nil in any operand causes an error, EQ and NEQ should be handled earlier.
@@ -107,12 +92,6 @@ literalBopTyMatch operator e1 e2 = do
             _    -> fail bopTyMismatch
     else
         pure (e1,e2)
-
-sameLitType :: Expr -> Expr -> Bool
-sameLitType (Lit (NumberLit _)) (Lit (NumberLit _)) = True
-sameLitType (Lit (StringLit _)) (Lit (StringLit _)) = True
-sameLitType (Lit (BoolLit _)) (Lit (BoolLit _)) = True
-sameLitType _ _ = False
 
 callTyCheck :: Expr -> EvalM Expr
 callTyCheck e@(Func _ _) = return e
@@ -140,6 +119,7 @@ evalNotTruthy e = do
         (Lit Nil) -> Lit $ BoolLit True               --Nil is falsy
         e -> Lit $ BoolLit False                      --Every else is truthy
 
+evalTruthyShortCircuit :: BinOp -> Expr -> Expr -> EvalM Expr
 evalTruthyShortCircuit And e1 e2 = do
     e1' <- eval e1
     if not . literalTruth $ e1'
@@ -155,11 +135,6 @@ evalTruthyShortCircuit Or e1 e2 = do
     else do
         e2' <- eval e2
         return e2'
-
-literalTruth :: Expr -> Bool
-literalTruth (Lit Nil) = False
-literalTruth (Lit (BoolLit False)) = False
-literalTruth _ = True
 
 interpretM :: Program -> EvalM Expr
 --interpretM ps | trace ("\nTRICK " <> show ps) False = undefined

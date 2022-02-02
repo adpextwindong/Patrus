@@ -80,8 +80,7 @@ evalK (BOp operator e1 e2) k env = evalK e1 (\e1' env' -> evalK e2 (tyMatchCont 
 evalK (Call callee args) env k = undefined --TODO add caller continuation to Environment
 evalK _ _ _ = undefined
 
-evalKTruthyShortCircuit :: BinOp -> Expr -> Expr -> (Store -> IO Store) -> (Store -> IO Store)
-evalKTruthyShortCircuit = undefined --TODO
+evalK _ _ _ = undefined
 
 --Boolean not in the Truthyness of Lox
 notTruthy :: Expr -> Expr

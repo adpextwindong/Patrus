@@ -55,8 +55,15 @@ evalK (BOp (Cmp P.EQ) e1 e2) k env = evalK e1
 evalK (BOp (Cmp P.NEQ) e1 e2) k env = evalK e1
   (\e1' env' -> evalK e2 (k . truthy P.NEQ e1') env') env
 
-evalK (BOp And e1 e2) k env = undefined --TODO
-evalK (BOp Or e1 e2) k env = undefined --TODO
+evalK (BOp And e1 e2) k env = evalK e1
+  (\e1' env' -> if not . literalTruth $ e1'
+                then k e1' env'
+                else evalK e2 k env') env
+
+evalK (BOp Or e1 e2) k env = evalK e1
+  (\e1' env' -> if literalTruth e1'
+                then k e1' env'
+                else evalK e2 k env') env
 
 evalK (Call callee args) env k = undefined --TODO add caller continuation to Environment
 evalK _ _ _ = undefined

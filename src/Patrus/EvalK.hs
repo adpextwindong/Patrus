@@ -87,7 +87,7 @@ interpretK :: Program -> (Store -> IO Store) -> (Store -> IO Store)
 interpretK [] k = k
 
 interpretK ((PrintStatement e) : xs) k = evalK e (\e' env' -> do
-  print ("PRINT: " <> show e)
+  print ("PRINT: " <> show e')
   interpretK xs k env')
 
 

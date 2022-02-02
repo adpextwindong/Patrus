@@ -25,43 +25,44 @@ kTraceM e = trace (show e) return
 --Monadic Expression Continuation (for printing/etc...)
 type KM m = Expr -> Store -> m Store
 
-evalK :: Expr -> Environment -> KM IO -> Store -> IO Store
-evalK e@(Lit _) env k = k e
+evalK :: Expr -> KM IO -> (Store -> IO Store)
+evalK e@(Lit _) k env = k e env
 
-evalK (Var i) env k = do
+evalK (Var i) k env =
     case lookupEnv i env of
         Nothing -> errVarError i
-        Just v -> k v
+        Just v -> k v env
 
-evalK (Assignment i e) env k = evalK e env (\e' env' -> adjustEnvFM i e' env' >>= k e')
+evalK (Assignment i e) k  env = evalK e (\e' env' -> adjustEnvFM i e' env' >>= k e') env
 
-evalK (NativeFunc Clock []) env k = \s -> do
+evalK (NativeFunc Clock []) k env = do
   picoseconds <- fromIntegral . diffTimeToPicoseconds . utctDayTime <$> getCurrentTime
   let seconds = Lit $ NumberLit $ picoseconds / 10^^12
-  k seconds s
+  k seconds env
 
-evalK (Group e) env k = evalK e env k
+evalK (Group e) k env = evalK e k env
 
-evalK (UOp Negate e) env k = evalK e env (\e' env' -> case e' of
+evalK (UOp Negate e) k env = evalK e (\e' env' -> case e' of
                                             (Lit (NumberLit x)) -> k (Lit (NumberLit (-x))) env'
-                                            _ -> fail uopTyMismatch)
+                                            _ -> fail uopTyMismatch) env
 
 --Dispatch to truthy evals
-evalK (UOp Not e) env k = evalK e env (\e' -> k (notTruthy e'))
+evalK (UOp Not e) k env = evalK e (k . notTruthy) env
 
-evalK (BOp (Cmp P.EQ) e1 e2) env k = evalK e1 env
-  (\e1' env' -> evalK e2 env' (\e2' env'' -> k (truthy P.EQ e1' e2') env'') env')
+evalK (BOp (Cmp P.EQ) e1 e2) k env = evalK e1
+  (\e1' env' -> evalK e2 (k . truthy P.EQ e1') env') env
 
-evalK (BOp (Cmp P.NEQ) e1 e2) env k = evalK e1 env
-  (\e1' env' -> evalK e2 env' (\e2' env'' -> k (truthy P.NEQ e1' e2') env'') env')
-{-
-evalK (BOp And e1 e2) env k = evalKTruthyShortCircuit And e1 e2 env k
-evalK (BOp Or e1 e2) env k = evalKTruthyShortCircuit Or e1 e2 env k
--}
+evalK (BOp (Cmp P.NEQ) e1 e2) k env = evalK e1
+  (\e1' env' -> evalK e2 (k . truthy P.NEQ e1') env') env
+
+evalK (BOp And e1 e2) k env = undefined --TODO
+evalK (BOp Or e1 e2) k env = undefined --TODO
 
 evalK (Call callee args) env k = undefined --TODO add caller continuation to Environment
-
 evalK _ _ _ = undefined
+
+evalKTruthyShortCircuit :: BinOp -> Expr -> Expr -> (Store -> IO Store) -> (Store -> IO Store)
+evalKTruthyShortCircuit = undefined --TODO
 
 --Boolean not in the Truthyness of Lox
 notTruthy :: Expr -> Expr
@@ -75,16 +76,14 @@ truthy operator e1 e2 = case operator of
                           P.EQ -> Lit $ BoolLit $ literalTruth e1 == literalTruth e2
                           NEQ -> Lit $ BoolLit $ literalTruth e1 /= literalTruth e2
 
-evalKTruthyShortCircuit :: BinOp -> Expr -> Expr -> Environment -> (Store -> IO Store) -> (Store -> IO Store)
-evalKTruthyShortCircuit = undefined --TODO
+interpretK :: Program -> (Store -> IO Store) -> (Store -> IO Store)
+interpretK [] k = k
 
-
-interpretK :: Program -> Environment -> (Store -> IO Store) -> (Store -> IO Store)
-interpretK [] _ k = k
-interpretK ((PrintStatement e) : xs) env k = evalK e env (\e' env' -> do
+interpretK ((PrintStatement e) : xs) k = evalK e (\e' env' -> do
   print ("PRINT: " <> show e)
-  interpretK xs env k env)
+  interpretK xs k env')
 
 
-tprintAdd = interpretK [(PrintStatement (BOp Plus (Lit (NumberLit 1.0)) (Lit (NumberLit 2.0))))] EmptyEnv return EmptyEnv
-tprint = interpretK [(PrintStatement (Lit (NumberLit 42.0)))] EmptyEnv return EmptyEnv
+
+tprintAdd = interpretK [PrintStatement (BOp Plus (Lit (NumberLit 1.0)) (Lit (NumberLit 2.0)))] return EmptyEnv
+tptrint = interpretK [PrintStatement (Lit (NumberLit 42.0))] return EmptyEnv

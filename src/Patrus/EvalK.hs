@@ -156,7 +156,7 @@ interpretK ((ReturnStatement (Just e)): _) _ = evalK e (\e' env' ->
     Nothing -> noCallerContFail
     Just fnk -> fnk e' (popFnRet env'))
 
-tprintAdd = interpretK [PrintStatement (BOp Plus (Lit (NumberLit 1.0)) (Lit (NumberLit 2.0)))] return emptyEnvironment
+tprintAdd = interpretK [PrintStatement oneplustwo] return emptyEnvironment
 tptrint = interpretK [PrintStatement (Lit (NumberLit 42.0))] return emptyEnvironment
 
 emptyEnvironment = Environment EmptyEnv Nothing
@@ -165,3 +165,9 @@ injectFnRet (Environment env _) k = Environment env (Just k)
 
 popFnRet :: Environment -> Environment
 popFnRet (Environment env _) = Environment env Nothing
+
+oneplustwo = (BOp Plus (Lit (NumberLit 1.0)) (Lit (NumberLit 2.0)))
+testmapevaldk = mapEvalk (take 5 (repeat oneplustwo)) kTraceList emptyEnvironment
+
+kTraceList :: [Expr] -> Store -> IO Store
+kTraceList xs = trace (show xs) return

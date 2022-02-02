@@ -1,5 +1,5 @@
 {-# LANGUAGE DoAndIfThenElse #-}
-module Patrus.Environment where
+module Patrus.Env where
 
 import qualified Data.Map.Strict as M
 import Control.Monad.State.Class (MonadState (..))
@@ -7,12 +7,15 @@ import Control.Monad.State.Class (MonadState (..))
 import Patrus.Types
 
 -- | Inserts the new variable into the outer most environment
-insertEnv :: Identifier -> Expr -> Environment -> Environment
+insertEnv :: Identifier -> Expr -> Env -> Env
 insertEnv i e EmptyEnv = Env (M.singleton i e) EmptyEnv
 insertEnv i e (Env scope p) = Env (M.insert i e scope) p
 
+insertEnvironment :: Identifier -> Expr -> Environment -> Environment
+insertEnvironment i e (Environment env rk) = Environment (insertEnv i e env) rk
+
 -- | Adjusts an existing binding or fails if it does not exist in the lexical scopes.
-adjustEnvFM :: (MonadFail m) => Identifier -> Expr -> Environment -> m Environment
+adjustEnvFM :: (MonadFail m) => Identifier -> Expr -> Env -> m Env
 adjustEnvFM i _ EmptyEnv = fail $ "Undefined variable \'" <> i <> "\'."
 adjustEnvFM i e (Env scope p) = do
     if M.member i scope
@@ -21,17 +24,22 @@ adjustEnvFM i e (Env scope p) = do
         p' <- adjustEnvFM i e p
         return $ Env scope p'
 
+adjustEnvironmentFM :: (MonadFail m) => Identifier -> Expr -> Environment -> m Environment
+adjustEnvironmentFM i e (Environment env k) = do
+    env' <- adjustEnvFM i e env
+    return (Environment env' k)
+
 -- | Recursively looks up the identifier in each map
-lookupEnv :: Identifier -> Environment -> Maybe Expr
+lookupEnv :: Identifier -> Env -> Maybe Expr
 lookupEnv i EmptyEnv = Nothing
 lookupEnv i (Env scope parent) = case M.lookup i scope of
-                                    Just v -> Just v
-                                    Nothing -> lookupEnv i parent
+                                   Just v -> Just v
+                                   Nothing -> lookupEnv i parent
 
-pushFreshEnv :: Environment -> Environment
+pushFreshEnv :: Env -> Env
 pushFreshEnv parentEnv = Env M.empty parentEnv
 
-popEnv :: Environment -> Environment
+popEnv :: Env -> Env
 popEnv (Env _ p) = p
 
 withFreshEnv :: EvalM a -> EvalM a
@@ -41,8 +49,11 @@ withFreshEnv f = do
     modifyEnv popEnv
     return e
 
-pushFuncEnv :: [(Identifier, Expr)] -> Environment -> Environment
+pushFuncEnv :: [(Identifier, Expr)] -> Env -> Env
 pushFuncEnv bindings env = Env (M.fromList bindings) env
+
+pushFuncEnvironment :: [(Identifier , Expr)] -> Environment -> Environment
+pushFuncEnvironment bindings (Environment env rk) = Environment (pushFuncEnv bindings env) rk
 
 withFuncEnv :: [(Identifier, Expr)] -> EvalM a -> EvalM a
 withFuncEnv bindings f = do
@@ -51,5 +62,7 @@ withFuncEnv bindings f = do
     modifyEnv popEnv
     return e
 
-modifyEnv :: (Environment -> Environment) -> EvalM ()
-modifyEnv f = get >>= (put . f)
+modifyEnv :: (Env -> Env) -> EvalM ()
+modifyEnv f = do
+    environ@(Environment env k) <- get
+    put (Environment (f env) k)

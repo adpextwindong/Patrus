@@ -45,7 +45,7 @@ data Expr = BOp BinOp Expr Expr
           | Group Expr
           | Var Identifier
           | Assignment Identifier Expr
-          | Func Function Environment
+          | Func Function Env
           | Call Expr [Expr]
                     | NativeFunc {
                 nativeFuncTag :: NativeTag
@@ -65,11 +65,23 @@ data Function = Function {
 data NativeTag = Clock
     deriving (Show, Eq)
 
-data Environment = Env {
-                       scope :: M.Map Identifier Expr
-                      ,enclosing :: Environment
-                   } | EmptyEnv
-                    deriving (Show, Eq)
+--Datatype for handling identifier bindings
+data Env = Env {
+            scope :: M.Map Identifier Expr
+           ,enclosing :: Env
+          } | EmptyEnv
+          deriving (Show, Eq)
+
+--Datatype for Runtime Environment
+--Any continuations for control flow will go here
+data Environment = Environment {
+                      env :: Env
+                     ,fnReturnK :: Maybe (Expr -> Environment -> IO Environment) --TODO maybe or list??
+                      --Maybe tag this with source location for printing
+                   }
+
+instance Show Environment where
+  show e = "Environment " <> show (env e) --Skips fnReturnK
 
 --like Intrigue's EvalM but with StateT
 newtype EvalM a = EvalM { runEval :: StateT Environment IO a }

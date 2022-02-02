@@ -4,14 +4,16 @@ module Patrus.EvalK where
 import Control.Monad.IO.Class (MonadIO)
 import Debug.Trace ( trace )
 import Data.Time.Clock (diffTimeToPicoseconds, getCurrentTime, UTCTime(utctDayTime))
+import Control.Monad
 
-import Patrus.Environment
+import Patrus.Env
 import Patrus.Types as P
 import Patrus.Eval.Pure
 
 uopTyMismatch = "Operand must be a number."
 bopTyMismatch = "Operands must be numbers."
 plusTyMismatch = "Operands must be two numbers or two strings."
+noCallerContFail = fail "ERROR: Return no caller continuation"
 
 errVarError identifier = error $ "Undefined variable '" <> identifier <> "'."
 
@@ -28,12 +30,12 @@ type KM m = Expr -> Store -> m Store
 evalK :: Expr -> KM IO -> (Store -> IO Store)
 evalK e@(Lit _) k env = k e env
 
-evalK (Var i) k env =
+evalK (Var i) k (Environment env rk) =
     case lookupEnv i env of
         Nothing -> errVarError i
-        Just v -> k v env
+        Just v -> k v (Environment env rk)
 
-evalK (Assignment i e) k  env = evalK e (\e' env' -> adjustEnvFM i e' env' >>= k e') env
+evalK (Assignment i e) k  env = evalK e (\e' env' -> adjustEnvironmentFM i e' env' >>= k e') env
 
 evalK (NativeFunc Clock []) k env = do
   picoseconds <- fromIntegral . diffTimeToPicoseconds . utctDayTime <$> getCurrentTime
@@ -77,10 +79,29 @@ evalK (BOp operator e1 e2) k env = evalK e1 (\e1' env' -> evalK e2 (tyMatchCont 
                                      else
                                         k (evalBop operator e1' e2') env''
 
-evalK (Call callee args) env k = undefined --TODO add caller continuation to Environment
-evalK _ _ _ = undefined
+evalK (Call callee args) k environ@(Environment env _) = evalK callee (\callee' env' ->
+  mapEvalK args (\args' env'' ->
+  case callee' of
+    e@(NativeFunc _ _) -> evalK e k env''
+    e@(Func (Function params body) closure) -> do
+                                                callTyCheck callee'
+                                                arityCheck params args'
+                                                interpretK [body] return (injectFnRet env'' k) --Return isn't used
+  )env' ) environ
 
 evalK _ _ _ = undefined
+
+mapEvalK [] k = k []
+mapEvalk xs k = mapEvalK' xs [] k
+
+mapEvalK' [] evalds k = k evalds
+mapEvalK' (e:es) evalds k = \env -> evalK e (\e' -> mapEvalK' es (e' : evalds) k) env
+
+callTyCheck e@(Func _ _) = return ()
+callTyCheck e@(Class) = return ()
+callTyCheck e = fail $ "Can only call functions and classes"
+
+arityCheck params args = undefined
 
 --Boolean not in the Truthyness of Lox
 notTruthy :: Expr -> Expr
@@ -105,11 +126,11 @@ interpretK (DumpStatement : xs) k = \env -> print ("DUMP: " <> show env) >> inte
 
 interpretK ((ExprStatement e) : xs) k = evalK e (\_ -> interpretK xs k)
 
-interpretK ((VarDeclaration i Nothing) : xs) k = \env -> interpretK xs k (insertEnv i (Lit Nil) env)
+interpretK ((VarDeclaration i Nothing) : xs) k = \env -> interpretK xs k (insertEnvironment i (Lit Nil) env)
 
-interpretK (VarDeclaration i (Just e) : xs) k = evalK e (\e' env' -> interpretK xs k (insertEnv i e' env'))
+interpretK (VarDeclaration i (Just e) : xs) k = evalK e (\e' env' -> interpretK xs k (insertEnvironment i e' env'))
 
-interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (interpretK xs k) (pushFuncEnv [] env)
+interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (interpretK xs k) (pushFuncEnvironment [] env)
 
 interpretK ((IfStatement conde trueBranch falseBranch) : xs) k = evalK conde (\conde' ->
   if literalTruth conde'
@@ -124,5 +145,23 @@ interpretK w@((WhileStatement conde body): xs) k = evalK conde (\conde' ->
   then interpretK [body] (interpretK w k)
   else interpretK xs k)
 
-tprintAdd = interpretK [PrintStatement (BOp Plus (Lit (NumberLit 1.0)) (Lit (NumberLit 2.0)))] return EmptyEnv
-tptrint = interpretK [PrintStatement (Lit (NumberLit 42.0))] return EmptyEnv
+--TODO test funcalls and nested funcalls
+interpretK (ReturnStatement Nothing: _) _ = \env ->
+  case fnReturnK env of
+    Nothing -> noCallerContFail
+    Just fnk -> fnk (Lit Nil) (popFnRet env)
+
+interpretK ((ReturnStatement (Just e)): _) _ = evalK e (\e' env' ->
+  case fnReturnK env' of
+    Nothing -> noCallerContFail
+    Just fnk -> fnk e' (popFnRet env'))
+
+tprintAdd = interpretK [PrintStatement (BOp Plus (Lit (NumberLit 1.0)) (Lit (NumberLit 2.0)))] return emptyEnvironment
+tptrint = interpretK [PrintStatement (Lit (NumberLit 42.0))] return emptyEnvironment
+
+emptyEnvironment = Environment EmptyEnv Nothing
+
+injectFnRet (Environment env _) k = Environment env (Just k)
+
+popFnRet :: Environment -> Environment
+popFnRet (Environment env _) = Environment env Nothing

@@ -6,7 +6,7 @@ import Control.Monad.State.Class (MonadState (..))
 import Control.Monad.Trans.State (StateT, runStateT, evalStateT, execStateT, modify')
 
 import Patrus.Eval
-import Patrus.Environment
+import Patrus.Env
 import Patrus.Types
 
 import qualified Data.Map.Strict as M
@@ -14,7 +14,8 @@ import qualified Data.Map.Strict as M
 runEvalM :: EvalM Expr -> Environment -> IO (Expr, Environment)
 runEvalM x = runStateT (runEval x)
 
-baseGlobalEnv = Env baseScope EmptyEnv
+baseGlobalEnv :: Environment
+baseGlobalEnv = Environment (Env baseScope EmptyEnv) Nothing
     where baseScope = M.fromList [clock]
           clock = ("clock", NativeFunc Clock []) --impl in eval...
 

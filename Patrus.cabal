@@ -38,7 +38,7 @@ library
         Patrus.EvalK
         Patrus.Eval.PrettyPrinter
         Patrus.Eval.Pure
-        Patrus.Environment
+        Patrus.Env
         Patrus.Types
         Patrus.Interpret
         Patrus

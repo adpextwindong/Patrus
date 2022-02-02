@@ -9,7 +9,7 @@ import Data.Time.Clock
 import Control.Monad.IO.Class
 import Control.Monad.State.Class (MonadState (..))
 
-import Patrus.Environment
+import Patrus.Env
 import Patrus.Types
 import Patrus.Eval.Pure (evalBop, sameLitType, literalTruth)
 
@@ -26,14 +26,14 @@ runtimeVarError identifier = "Undefined variable '" <> identifier <> "'."
 eval :: Expr -> EvalM Expr
 eval e@(Lit _) = return e
 eval (Var i) = do
-    env <- get
+    (Environment env _) <- get
     case lookupEnv i env of
         Nothing -> fail $ runtimeVarError i
         Just v -> return v
 
 eval (Assignment i e) = do
    e' <- eval e
-   put =<< adjustEnvFM i e' =<< get
+   put =<< adjustEnvironmentFM i e' =<< get
    return e'
 
 eval (NativeFunc Clock []) = do
@@ -78,6 +78,10 @@ eval (BOp Or e1 e2) = evalTruthyShortCircuit Or e1 e2
 eval (BOp operator e1 e2) = do
     (e1,e2) <- literalBopTyMatch operator e1 e2
     pure $ evalBop operator e1 e2
+
+eval e@(Func _ _) = undefined --TODO
+eval Class = undefined --TODO
+eval Unit = undefined --TODO Remove
 
 -- | Performs strict type matching for PLUS/MINUS/DIV/MUL/LT/LTE/GT/GTE
 -- Nil in any operand causes an error, EQ and NEQ should be handled earlier.
@@ -196,7 +200,7 @@ interpretM ((ReturnStatement Nothing): xs) = return $ Lit Nil
 interpretM ((ReturnStatement (Just e)): xs) = eval e
 
 interpretM ((FunStatement name args body) : xs) = do
-    closure <- get
+    (Environment closure _) <- get
     let e = Func (Function args body) closure
     modifyEnv (insertEnv name e)
     interpretM xs

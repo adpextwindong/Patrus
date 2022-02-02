@@ -2,7 +2,7 @@ module Patrus
     ( module Patrus.Types
      ,module Patrus.Lexer
      ,module Patrus.Parser
-     ,module Patrus.Environment
+     ,module Patrus.Env
      ,module Patrus.Interpret
      ,module Patrus.Eval
      ,ip
@@ -12,7 +12,7 @@ module Patrus
 import Patrus.Types
 import Patrus.Lexer
 import Patrus.Parser
-import Patrus.Environment
+import Patrus.Env
 import Patrus.Interpret
 import Patrus.Eval
 

@@ -65,6 +65,18 @@ evalK (BOp Or e1 e2) k env = evalK e1
                 then k e1' env'
                 else evalK e2 k env') env
 
+
+evalK (BOp operator e1 e2) k env = evalK e1 (\e1' env' -> evalK e2 (tyMatchCont e1') env') env
+  where
+    tyMatchCont = \e1' e2' env'' -> if not $ sameLitType e1' e2'
+                                    then case operator of
+                                        Plus -> do
+                                          print $ "ATTEMPTED: " <> show operator <> " " <> show e1' <> show e2'
+                                          fail plusTyMismatch
+                                        _ -> fail bopTyMismatch
+                                     else
+                                        k (evalBop operator e1' e2') env''
+
 evalK (Call callee args) env k = undefined --TODO add caller continuation to Environment
 evalK _ _ _ = undefined
 

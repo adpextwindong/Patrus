@@ -35,6 +35,7 @@ library
         Patrus.Parser
         Patrus.Lexer
         Patrus.Eval
+        Patrus.EvalK
         Patrus.Eval.PrettyPrinter
         Patrus.Eval.Pure
         Patrus.Environment

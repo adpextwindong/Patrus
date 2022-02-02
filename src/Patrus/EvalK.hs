@@ -102,7 +102,28 @@ interpretK ((PrintStatement e) : xs) k = evalK e (\e' env' -> do
   print ("PRINT: " <> show e')
   interpretK xs k env')
 
+interpretK (DumpStatement : xs) k = \env -> print ("DUMP: " <> show env) >> interpretK xs k env
 
+interpretK ((ExprStatement e) : xs) k = evalK e (\_ -> interpretK xs k)
+
+interpretK ((VarDeclaration i Nothing) : xs) k = \env -> interpretK xs k (insertEnv i (Lit Nil) env)
+
+interpretK (VarDeclaration i (Just e) : xs) k = evalK e (\e' env' -> interpretK xs k (insertEnv i e' env'))
+
+interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (interpretK xs k) (pushFuncEnv [] env)
+
+interpretK ((IfStatement conde trueBranch falseBranch) : xs) k = evalK conde (\conde' ->
+  if literalTruth conde'
+  then interpretK [trueBranch] k
+  else case falseBranch of
+    Just fb -> interpretK [fb] k
+    Nothing -> k)
+
+--9.3 Challenge TODO break statement continuation stashing in env
+interpretK w@((WhileStatement conde body): xs) k = evalK conde (\conde' ->
+  if literalTruth conde'
+  then interpretK [body] (interpretK w k)
+  else interpretK xs k)
 
 tprintAdd = interpretK [PrintStatement (BOp Plus (Lit (NumberLit 1.0)) (Lit (NumberLit 2.0)))] return EmptyEnv
 tptrint = interpretK [PrintStatement (Lit (NumberLit 42.0))] return EmptyEnv

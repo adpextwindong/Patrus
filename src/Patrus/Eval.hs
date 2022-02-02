@@ -38,9 +38,10 @@ eval (Assignment i e) = do
 
 eval (NativeFunc Clock []) = do
     picoseconds <- liftIO $ fromIntegral . diffTimeToPicoseconds . utctDayTime <$> getCurrentTime
-    let seconds = picoseconds / fromIntegral 10^^12
+    let seconds = picoseconds / 10^^12
+    return $ Lit $ NumberLit seconds
 
-    return $ Lit $ NumberLit $ seconds
+eval (NativeFunc Clock xs) = fail $ "Expected " <> show 0 <> " arguments but got " <> show (length xs) <> "."
 
 
 eval (Call callee args) = do

@@ -142,7 +142,11 @@ interpretK ((VarDeclaration i Nothing) : xs) k = \env -> interpretK xs k (insert
 
 interpretK (VarDeclaration i (Just e) : xs) k = evalK e (\e' env' -> interpretK xs k (insertEnvironment i e' env'))
 
-interpretK ((FunStatement name params body) : xs) k = undefined --TODO finish fun decl
+interpretK ((FunStatement name params body) : xs) k = \environ ->
+  let fn = Func (Function params body) (env environ) in
+    interpretK xs k (insertEnvironment name fn environ)
+
+--TODO make sure this pops the environment
 interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (interpretK xs k) (pushFuncEnvironment [] env)
 
 interpretK ((IfStatement conde trueBranch falseBranch) : xs) k = evalK conde (\conde' ->

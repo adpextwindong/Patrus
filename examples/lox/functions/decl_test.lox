@@ -1,0 +1,12 @@
+fun foo(n){
+  if(n == 2){
+    fun foo(n){
+      return 500;
+    }
+    return foo(n);
+  }else{
+    return n;
+  }
+}
+
+print foo(2);

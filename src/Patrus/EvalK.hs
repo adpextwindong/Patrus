@@ -98,13 +98,8 @@ evalK Unit _ _ = undefined --TODO remove unit from the base expr
 --evalK _ _ _ = undefined
 
 mapEvalK :: [Expr] -> ([Expr] -> Store -> IO Store) -> Store -> IO Store
-mapEvalK [] = \k -> k []
-mapEvalK [e] = \k -> evalK e (\e' -> k [e'])
-mapEvalK xs@(_:_:_) = mapEvalK' xs []
-
-mapEvalK' :: [Expr] -> [Expr] -> ([Expr] -> Store -> IO Store) -> Store -> IO Store
-mapEvalK' [] accum k = k (reverse accum)
-mapEvalK' (e:es) accum k = evalK e (\e' -> mapEvalK' es (e' : accum) k)
+mapEvalK [] k = k []
+mapEvalK (e:es) k = evalK e (\e' -> mapEvalK es (k . (e' :)))
 
 callTyCheck (Func _ _) = return ()
 callTyCheck Class = return ()

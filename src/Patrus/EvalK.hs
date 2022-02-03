@@ -7,6 +7,7 @@ import Data.Time.Clock (diffTimeToPicoseconds, getCurrentTime, UTCTime(utctDayTi
 import Patrus.Env
 import Patrus.Types as P
 import Patrus.Eval.Pure
+import Patrus.Parser
 
 uopTyMismatch = "Operand must be a number."
 bopTyMismatch = "Operands must be numbers."
@@ -86,7 +87,10 @@ evalK (Call callee args) k environment = evalK callee (\callee' env' ->
     (Func (Function params body) closure) -> do
                                                 callTyCheck callee'
                                                 arityCheck params args'
-                                                interpretK [body] return (injectFnRet env'' k) --Return isn't used
+                                                let bindings = zip params args'
+                                                --TODO add function name to Func so it can recurse on itself instead of globals
+                                                let funcEnv = pushFuncEnvironment bindings (fnRetRestoreEnv env'' k closure)
+                                                interpretK [body] return funcEnv --Return isn't used
     _ -> fail "Type Error: can't call a non function"
   )env' ) environment
 
@@ -123,13 +127,14 @@ truthy operator e1 e2 = case operator of
                           NEQ -> Lit $ BoolLit $ literalTruth e1 /= literalTruth e2
 
 interpretK :: Program -> (Store -> IO Store) -> (Store -> IO Store)
+--interpretK p k | trace ("DEBUG INTERPRETK " <> show p <> "\n") False = undefined
 interpretK [] k = k
 
 interpretK ((PrintStatement e) : xs) k = evalK e (\e' env' -> do
   print ("PRINT: " <> show e')
   interpretK xs k env')
 
-interpretK (DumpStatement : xs) k = \env -> print ("DUMP: " <> show env) >> interpretK xs k env
+interpretK (DumpStatement : xs) k = \env -> putStr ("DUMP: " <> show env <> "\n") >> interpretK xs k env
 
 interpretK ((ExprStatement e) : xs) k = evalK e (\_ -> interpretK xs k)
 
@@ -160,20 +165,19 @@ interpretK w@((WhileStatement conde body): xs) k = evalK conde (\conde' ->
 interpretK (ReturnStatement Nothing: _) _ = \env ->
   case fnReturnK env of
     Nothing -> noCallerContFail
-    Just fnk -> fnk (Lit Nil) (popFnRet env)
+    (Just (fk, callerEnv)) -> fk (Lit Nil) callerEnv
 
 interpretK ((ReturnStatement (Just e)): _) _ = evalK e (\e' env' ->
   case fnReturnK env' of
     Nothing -> noCallerContFail
-    Just fnk -> fnk e' (popFnRet env'))
+    (Just (fk, callerEnv)) -> fk e' callerEnv)
 
 
 emptyEnvironment = Environment EmptyEnv Nothing
 
-injectFnRet (Environment env _) k = Environment env (Just k)
-
-popFnRet :: Environment -> Environment
-popFnRet (Environment env _) = Environment env Nothing
+--TODO fix this to include globals
+fnRetRestoreEnv :: Environment -> KM IO -> Env -> Environment
+fnRetRestoreEnv callerEnv k closure = Environment closure (Just (k, callerEnv))
 
 kTraceList :: [Expr] -> Store -> IO Store
 kTraceList xs = trace (show xs) return
@@ -194,3 +198,15 @@ blockPushPopTest = interpretK prog return emptyEnvironment
              ,DumpStatement
            ]
            ,DumpStatement]
+
+ifetest = interpretK ifeProg return emptyEnvironment
+  where ifeProg = parseProgram "var n = 2; if (n<=2) print n; else print 666; var y = 10;"
+
+fibtest = interpretK simplefib return emptyEnvironment
+
+--fibprog = parseProgram "fun fib(n){ if(n<=2) return n;  else  return fib(n-2) + fib(n-1); } print fib(3);"
+
+simplefib = parseProgram "fun fib(n) { DUMP; if (n == 1) { return fib(0) + fib(0); } else { return 1; } } print fib(1);"
+
+--simpleTest = interpretK simpleCall return emptyEnvironment
+--simpleCall = parseProgram "fun foo(n){ if(n<6){ return 1; } else { return 0; } } print foo(100);"

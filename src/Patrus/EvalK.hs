@@ -148,12 +148,13 @@ interpretK ((FunStatement name params body) : xs) k = \environ ->
 
 interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (\env -> interpretK xs k (popFuncEnvironment env)) (pushFuncEnvironment [] env)
 
+--TODO test IFE xs interpretting
 interpretK ((IfStatement conde trueBranch falseBranch) : xs) k = evalK conde (\conde' ->
   if literalTruth conde'
-  then interpretK [trueBranch] k
+  then interpretK [trueBranch] (interpretK xs k)
   else case falseBranch of
-    Just fb -> interpretK [fb] k
-    Nothing -> k)
+    Just fb -> interpretK [fb] (interpretK xs k)
+    Nothing -> interpretK xs k)
 
 --9.3 Challenge TODO break statement continuation stashing in env
 interpretK w@((WhileStatement conde body): xs) k = evalK conde (\conde' ->

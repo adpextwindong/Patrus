@@ -141,7 +141,6 @@ interpretK ((FunStatement name params body) : xs) k = \environ ->
   let fn = Func (Function params body) (env environ) in
     interpretK xs k (insertEnvironment name fn environ)
 
---TODO make sure this pops the environment
 interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (\env -> interpretK xs k (popFuncEnvironment env)) (pushFuncEnvironment [] env)
 
 interpretK ((IfStatement conde trueBranch falseBranch) : xs) k = evalK conde (\conde' ->
@@ -168,8 +167,6 @@ interpretK ((ReturnStatement (Just e)): _) _ = evalK e (\e' env' ->
     Nothing -> noCallerContFail
     Just fnk -> fnk e' (popFnRet env'))
 
-tprintAdd = interpretK [PrintStatement (termplus 1 2)] return emptyEnvironment
-tptrint = interpretK [PrintStatement (Lit (NumberLit 42.0))] return emptyEnvironment
 
 emptyEnvironment = Environment EmptyEnv Nothing
 
@@ -178,11 +175,15 @@ injectFnRet (Environment env _) k = Environment env (Just k)
 popFnRet :: Environment -> Environment
 popFnRet (Environment env _) = Environment env Nothing
 
-termplus x y = BOp Plus (Lit (NumberLit x)) (Lit (NumberLit y))
-testmapevaldk = mapEvalK [termplus 1 2, termplus 3 4, termplus 5 6] kTraceList emptyEnvironment
-
 kTraceList :: [Expr] -> Store -> IO Store
 kTraceList xs = trace (show xs) return
+
+{- TESTS -}
+tprintAdd = interpretK [PrintStatement (termplus 1 2)] return emptyEnvironment
+tptrint = interpretK [PrintStatement (Lit (NumberLit 42.0))] return emptyEnvironment
+
+termplus x y = BOp Plus (Lit (NumberLit x)) (Lit (NumberLit y))
+testmapevaldk = mapEvalK [termplus 1 2, termplus 3 4, termplus 5 6] kTraceList emptyEnvironment
 
 blockPushPopTest = interpretK prog return emptyEnvironment
   where

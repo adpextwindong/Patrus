@@ -91,11 +91,14 @@ evalK (Call callee args) k environ@(Environment env _) = evalK callee (\callee' 
 
 evalK _ _ _ = undefined
 
-mapEvalK [] k = k []
-mapEvalk xs k = mapEvalK' xs [] k
+mapEvalK :: [Expr] -> ([Expr] -> Store -> IO Store) -> Store -> IO Store
+mapEvalK [] = \k -> k [] --TODO non-exhaustive
+mapEvalK [e] = \k -> evalK e (\e' -> k [e'])
+mapEvalK xs@(_:_:_) = mapEvalK' xs []
 
-mapEvalK' [] evalds k = k evalds
-mapEvalK' (e:es) evalds k = \env -> evalK e (\e' -> mapEvalK' es (e' : evalds) k) env
+mapEvalK' :: [Expr] -> [Expr] -> ([Expr] -> Store -> IO Store) -> Store -> IO Store
+mapEvalK' [] evalds k = k (reverse evalds) --TODO fix this
+mapEvalK' (e:es) evalds k = evalK e (\e' -> mapEvalK' es (e' : evalds) k)
 
 callTyCheck e@(Func _ _) = return ()
 callTyCheck e@(Class) = return ()
@@ -156,7 +159,7 @@ interpretK ((ReturnStatement (Just e)): _) _ = evalK e (\e' env' ->
     Nothing -> noCallerContFail
     Just fnk -> fnk e' (popFnRet env'))
 
-tprintAdd = interpretK [PrintStatement oneplustwo] return emptyEnvironment
+tprintAdd = interpretK [PrintStatement (termplus 1 2)] return emptyEnvironment
 tptrint = interpretK [PrintStatement (Lit (NumberLit 42.0))] return emptyEnvironment
 
 emptyEnvironment = Environment EmptyEnv Nothing
@@ -166,8 +169,8 @@ injectFnRet (Environment env _) k = Environment env (Just k)
 popFnRet :: Environment -> Environment
 popFnRet (Environment env _) = Environment env Nothing
 
-oneplustwo = (BOp Plus (Lit (NumberLit 1.0)) (Lit (NumberLit 2.0)))
-testmapevaldk = mapEvalk (take 5 (repeat oneplustwo)) kTraceList emptyEnvironment
+termplus x y = BOp Plus (Lit (NumberLit x)) (Lit (NumberLit y))
+testmapevaldk = mapEvalK [termplus 1 2, termplus 3 4, termplus 5 6] kTraceList emptyEnvironment
 
 kTraceList :: [Expr] -> Store -> IO Store
 kTraceList xs = trace (show xs) return

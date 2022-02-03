@@ -41,6 +41,11 @@ pushFreshEnv parentEnv = Env M.empty parentEnv
 
 popEnv :: Env -> Env
 popEnv (Env _ p) = p
+popEnv EmptyEnv = EmptyEnv
+
+popFuncEnvironment :: Environment -> Environment
+popFuncEnvironment (Environment (Env _ p) rk) = Environment p rk
+popFuncEnvironment (Environment EmptyEnv rk) = Environment EmptyEnv rk
 
 withFreshEnv :: EvalM a -> EvalM a
 withFreshEnv f = do

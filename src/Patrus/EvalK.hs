@@ -142,7 +142,7 @@ interpretK ((FunStatement name params body) : xs) k = \environ ->
     interpretK xs k (insertEnvironment name fn environ)
 
 --TODO make sure this pops the environment
-interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (interpretK xs k) (pushFuncEnvironment [] env)
+interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (\env -> interpretK xs k (popFuncEnvironment env)) (pushFuncEnvironment [] env)
 
 interpretK ((IfStatement conde trueBranch falseBranch) : xs) k = evalK conde (\conde' ->
   if literalTruth conde'
@@ -183,3 +183,13 @@ testmapevaldk = mapEvalK [termplus 1 2, termplus 3 4, termplus 5 6] kTraceList e
 
 kTraceList :: [Expr] -> Store -> IO Store
 kTraceList xs = trace (show xs) return
+
+blockPushPopTest = interpretK prog return emptyEnvironment
+  where
+    prog = [VarDeclaration "x" Nothing
+           ,DumpStatement
+           ,BlockStatement [
+             VarDeclaration "y" Nothing
+             ,DumpStatement
+           ]
+           ,DumpStatement]

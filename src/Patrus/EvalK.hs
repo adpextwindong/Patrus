@@ -110,7 +110,10 @@ callTyCheck (Func _ _) = return ()
 callTyCheck Class = return ()
 callTyCheck _ = fail $ "Can only call functions and classes"
 
-arityCheck params args = undefined --TODO finish arity checking and write tests
+arityCheck :: [Identifier] -> [Expr] -> IO ()
+arityCheck params args = if length params == length args
+                         then return ()
+                         else fail $ "Expected " <> show (length params) <> " arguments but got " <> show (length args) <> "."
 
 --Boolean not in the Truthyness of Lox
 notTruthy :: Expr -> Expr

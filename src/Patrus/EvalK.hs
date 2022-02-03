@@ -1,10 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 module Patrus.EvalK where
 
-import Control.Monad.IO.Class (MonadIO)
 import Debug.Trace ( trace )
 import Data.Time.Clock (diffTimeToPicoseconds, getCurrentTime, UTCTime(utctDayTime))
-import Control.Monad
 
 import Patrus.Env
 import Patrus.Types as P
@@ -41,6 +39,8 @@ evalK (NativeFunc Clock []) k env = do
   picoseconds <- fromIntegral . diffTimeToPicoseconds . utctDayTime <$> getCurrentTime
   let seconds = Lit $ NumberLit $ picoseconds / 10^^12
   k seconds env
+
+evalK (NativeFunc Clock _) _ _ = fail "Arity Error: Clock NativeFunc expects no args"
 
 evalK (Group e) k env = evalK e k env
 
@@ -79,39 +79,45 @@ evalK (BOp operator e1 e2) k env = evalK e1 (\e1' env' -> evalK e2 (tyMatchCont 
                                      else
                                         k (evalBop operator e1' e2') env''
 
-evalK (Call callee args) k environ@(Environment env _) = evalK callee (\callee' env' ->
+evalK (Call callee args) k environment = evalK callee (\callee' env' ->
   mapEvalK args (\args' env'' ->
   case callee' of
     e@(NativeFunc _ _) -> evalK e k env''
-    e@(Func (Function params body) closure) -> do
+    (Func (Function params body) closure) -> do
                                                 callTyCheck callee'
                                                 arityCheck params args'
                                                 interpretK [body] return (injectFnRet env'' k) --Return isn't used
-  )env' ) environ
+    _ -> fail "Type Error: can't call a non function"
+  )env' ) environment
 
-evalK _ _ _ = undefined
+evalK (Func _ _) _ _ = undefined --TODO
+evalK Class _ _ = undefined --TODO
+
+evalK Unit _ _ = undefined --TODO remove unit from the base expr
+
+--evalK _ _ _ = undefined
 
 mapEvalK :: [Expr] -> ([Expr] -> Store -> IO Store) -> Store -> IO Store
-mapEvalK [] = \k -> k [] --TODO non-exhaustive
+mapEvalK [] = \k -> k []
 mapEvalK [e] = \k -> evalK e (\e' -> k [e'])
 mapEvalK xs@(_:_:_) = mapEvalK' xs []
 
 mapEvalK' :: [Expr] -> [Expr] -> ([Expr] -> Store -> IO Store) -> Store -> IO Store
-mapEvalK' [] evalds k = k (reverse evalds) --TODO fix this
-mapEvalK' (e:es) evalds k = evalK e (\e' -> mapEvalK' es (e' : evalds) k)
+mapEvalK' [] accum k = k (reverse accum)
+mapEvalK' (e:es) accum k = evalK e (\e' -> mapEvalK' es (e' : accum) k)
 
-callTyCheck e@(Func _ _) = return ()
-callTyCheck e@(Class) = return ()
-callTyCheck e = fail $ "Can only call functions and classes"
+callTyCheck (Func _ _) = return ()
+callTyCheck Class = return ()
+callTyCheck _ = fail $ "Can only call functions and classes"
 
-arityCheck params args = undefined
+arityCheck params args = undefined --TODO finish arity checking and write tests
 
 --Boolean not in the Truthyness of Lox
 notTruthy :: Expr -> Expr
 notTruthy = \case
   (Lit (BoolLit b)) -> Lit $ BoolLit (not b) --Bools are bools
   (Lit Nil) -> Lit $ BoolLit True            --Nil is falsy
-  e -> Lit $ BoolLit False                   --Everything else is truthy
+  _ -> Lit $ BoolLit False                   --Everything else is truthy
 
 truthy :: ComparrisonOp -> Expr -> Expr -> Expr
 truthy operator e1 e2 = case operator of
@@ -133,6 +139,7 @@ interpretK ((VarDeclaration i Nothing) : xs) k = \env -> interpretK xs k (insert
 
 interpretK (VarDeclaration i (Just e) : xs) k = evalK e (\e' env' -> interpretK xs k (insertEnvironment i e' env'))
 
+interpretK ((FunStatement name params body) : xs) k = undefined --TODO finish fun decl
 interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (interpretK xs k) (pushFuncEnvironment [] env)
 
 interpretK ((IfStatement conde trueBranch falseBranch) : xs) k = evalK conde (\conde' ->

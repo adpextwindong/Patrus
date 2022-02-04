@@ -36,6 +36,7 @@ eval (Var i) = do
                      Just v -> return v
         Just v -> return v
 
+--TODO this needs to be global aware
 eval (Assignment i e) = do
    e' <- eval e
    put =<< adjustEnvironmentFM i e' =<< get

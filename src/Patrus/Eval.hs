@@ -25,10 +25,14 @@ runtimeVarError identifier = "Undefined variable '" <> identifier <> "'."
 -- Type checking and subexpression handling is done elsewhere.
 eval :: Expr -> EvalM Expr
 eval e@(Lit _) = return e
+
+-- TODO test global handling
 eval (Var i) = do
-    (Environment env _) <- get
+    (Environment env global _) <- get
     case lookupEnv i env of
-        Nothing -> fail $ runtimeVarError i
+        Nothing -> case lookupEnv i global of
+                     Nothing -> fail $ runtimeVarError i
+                     Just v -> return v
         Just v -> return v
 
 eval (Assignment i e) = do
@@ -200,7 +204,7 @@ interpretM ((ReturnStatement Nothing): xs) = return $ Lit Nil
 interpretM ((ReturnStatement (Just e)): xs) = eval e
 
 interpretM ((FunStatement name args body) : xs) = do
-    (Environment closure _) <- get
+    (Environment closure _ _) <- get
     let e = Func (Function args body) closure
     modifyEnv (insertEnv name e)
     interpretM xs

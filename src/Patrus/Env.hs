@@ -12,7 +12,8 @@ insertEnv i e EmptyEnv = Env (M.singleton i e) EmptyEnv
 insertEnv i e (Env scope p) = Env (M.insert i e scope) p
 
 insertEnvironment :: Identifier -> Expr -> Environment -> Environment
-insertEnvironment i e (Environment env rk) = Environment (insertEnv i e env) rk
+insertEnvironment i e (Environment EmptyEnv global rk) = Environment EmptyEnv (insertEnv i e global) rk
+insertEnvironment i e (Environment env global rk) = Environment (insertEnv i e env) global rk
 
 -- | Adjusts an existing binding or fails if it does not exist in the lexical scopes.
 adjustEnvFM :: (MonadFail m) => Identifier -> Expr -> Env -> m Env
@@ -25,9 +26,13 @@ adjustEnvFM i e (Env scope p) = do
         return $ Env scope p'
 
 adjustEnvironmentFM :: (MonadFail m) => Identifier -> Expr -> Environment -> m Environment
-adjustEnvironmentFM i e (Environment env k) = do
+adjustEnvironmentFM i e (Environment EmptyEnv global k) = do
+    global' <- adjustEnvFM i e global
+    return (Environment EmptyEnv global k)
+
+adjustEnvironmentFM i e (Environment env global k) = do
     env' <- adjustEnvFM i e env
-    return (Environment env' k)
+    return (Environment env' global k)
 
 -- | Recursively looks up the identifier in each map
 lookupEnv :: Identifier -> Env -> Maybe Expr
@@ -44,8 +49,8 @@ popEnv (Env _ p) = p
 popEnv EmptyEnv = EmptyEnv
 
 popFuncEnvironment :: Environment -> Environment
-popFuncEnvironment (Environment (Env _ p) rk) = Environment p rk
-popFuncEnvironment (Environment EmptyEnv rk) = Environment EmptyEnv rk
+popFuncEnvironment (Environment (Env _ p) global rk) = Environment p global rk
+popFuncEnvironment (Environment EmptyEnv global rk) = Environment EmptyEnv global rk
 
 withFreshEnv :: EvalM a -> EvalM a
 withFreshEnv f = do
@@ -58,7 +63,7 @@ pushFuncEnv :: [(Identifier, Expr)] -> Env -> Env
 pushFuncEnv bindings env = Env (M.fromList bindings) env
 
 pushFuncEnvironment :: [(Identifier , Expr)] -> Environment -> Environment
-pushFuncEnvironment bindings (Environment env rk) = Environment (pushFuncEnv bindings env) rk
+pushFuncEnvironment bindings (Environment env global rk) = Environment (pushFuncEnv bindings env) global rk
 
 withFuncEnv :: [(Identifier, Expr)] -> EvalM a -> EvalM a
 withFuncEnv bindings f = do
@@ -67,7 +72,10 @@ withFuncEnv bindings f = do
     modifyEnv popEnv
     return e
 
+--TODO fix for global after next chapter
+--I split the Environment into a lexical scope and another for globals (which should always be 1 lexical scope).
+--I need to double check if modifyEnv respects that
 modifyEnv :: (Env -> Env) -> EvalM ()
 modifyEnv f = do
-    environ@(Environment env k) <- get
-    put (Environment (f env) k)
+    environ@(Environment env global k) <- get
+    put (Environment (f env) global k)

@@ -30,10 +30,12 @@ type KM m = Expr -> Store -> m Store
 evalK :: Expr -> KM IO -> (Store -> IO Store)
 evalK e@(Lit _) k env = k e env
 
-evalK (Var i) k (Environment env rk) =
+evalK (Var i) k environ@(Environment env global rk) =
     case lookupEnv i env of
-        Nothing -> errVarError i
-        Just v -> k v (Environment env rk)
+        Nothing -> case lookupEnv i global of
+                     Nothing -> errVarError i
+                     Just v -> k v environ
+        Just v -> k v environ
 
 evalK (Assignment i e) k  env = evalK e (\e' env' -> adjustEnvironmentFM i e' env' >>= k e') env
 
@@ -176,17 +178,20 @@ interpretK ((ReturnStatement (Just e)): _) _ = evalK e (\e' env' ->
     (Just (fk, callerEnv)) -> fk e' callerEnv)
 
 
-baseGlobalEnv :: Environment
-baseGlobalEnv = Environment (Env baseScope EmptyEnv) Nothing
+baseGlobalEnv :: Env
+baseGlobalEnv = Env baseScope EmptyEnv
   where baseScope = M.fromList [clock]
         clock = ("clock", NativeFunc Clock [])
 
 
-emptyEnvironment = Environment EmptyEnv Nothing
+emptyEnvironment = Environment EmptyEnv baseGlobalEnv Nothing
 
 --TODO fix this to include globals
 fnRetRestoreEnv :: Environment -> KM IO -> Env -> Environment
-fnRetRestoreEnv callerEnv k closure = Environment closure (Just (k, callerEnv))
+fnRetRestoreEnv callerEnv@(Environment _ global _) k closure = Environment closure global (Just (k, callerEnv))
+
+replaceRetGlobal :: Environment -> Environment -> Environment
+replaceRetGlobal = undefined
 
 kTraceList :: [Expr] -> Store -> IO Store
 kTraceList xs = trace (show xs) return
@@ -211,11 +216,5 @@ blockPushPopTest = interpretK prog return emptyEnvironment
 ifetest = interpretK ifeProg return emptyEnvironment
   where ifeProg = parseProgram "var n = 2; if (n<=2) print n; else print 666; var y = 10;"
 
-fibtest = interpretK simplefib return emptyEnvironment
-
---fibprog = parseProgram "fun fib(n){ if(n<=2) return n;  else  return fib(n-2) + fib(n-1); } print fib(3);"
-
-simplefib = parseProgram "fun fib(n) { DUMP; if (n == 1) { return fib(0) + fib(0); } else { return 1; } } print fib(1);"
-
---simpleTest = interpretK simpleCall return emptyEnvironment
---simpleCall = parseProgram "fun foo(n){ if(n<6){ return 1; } else { return 0; } } print foo(100);"
+fibtest = interpretK fib return emptyEnvironment
+fib = parseProgram "fun fib(n) { if (n <= 1) { return n; } else { return fib(n-2) + fib(n-1); } } print fib(20);"

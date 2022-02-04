@@ -15,7 +15,7 @@ runEvalM :: EvalM Expr -> Environment -> IO (Expr, Environment)
 runEvalM x = runStateT (runEval x)
 
 baseGlobalEnv :: Environment
-baseGlobalEnv = Environment (Env baseScope EmptyEnv) Nothing
+baseGlobalEnv = Environment EmptyEnv (Env baseScope EmptyEnv) Nothing
     where baseScope = M.fromList [clock]
           clock = ("clock", NativeFunc Clock []) --impl in eval...
 

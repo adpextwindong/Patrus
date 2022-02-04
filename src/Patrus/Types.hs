@@ -76,13 +76,14 @@ data Env = Env {
 --Any continuations for control flow will go here
 data Environment = Environment {
                       env :: Env
-                     ,fnReturnK :: Maybe ((Expr -> Environment -> IO Environment), Environment) --TODO maybe or list??
+                     ,global :: Env
+                     ,fnReturnK :: Maybe (Expr -> Environment -> IO Environment, Environment) --TODO maybe or list??
                       --Maybe tag this with source location for printing
                    }
 
 instance Show Environment where
-  show (Environment env Nothing) = "Environment " <> show env <> " no returnK"
-  show (Environment env (Just xs)) = "Environment " <> show env <> " has returnK"
+  show (Environment env global Nothing) = "Environment " <> show env <> " Global "<> show global <> " no returnK"
+  show (Environment env global (Just xs)) = "Environment " <> show env <> " Global" <> show global <> " has returnK"
 
 --like Intrigue's EvalM but with StateT
 newtype EvalM a = EvalM { runEval :: StateT Environment IO a }

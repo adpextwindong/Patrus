@@ -3,6 +3,7 @@ module Patrus.EvalK where
 
 import Debug.Trace ( trace )
 import Data.Time.Clock (diffTimeToPicoseconds, getCurrentTime, UTCTime(utctDayTime))
+import qualified Data.Map as M
 
 import Patrus.Env
 import Patrus.Types as P
@@ -45,18 +46,19 @@ evalK (NativeFunc Clock _) _ _ = fail "Arity Error: Clock NativeFunc expects no 
 
 evalK (Group e) k env = evalK e k env
 
+--TODO write test of number to bool negation conversion
 evalK (UOp Negate e) k env = evalK e (\e' env' -> case e' of
                                             (Lit (NumberLit x)) -> k (Lit (NumberLit (-x))) env'
-                                            _ -> fail uopTyMismatch) env
+                                            other -> k (Lit (BoolLit (not . literalTruth $ other))) env') env
 
 --Dispatch to truthy evals
 evalK (UOp Not e) k env = evalK e (k . notTruthy) env
 
 evalK (BOp (Cmp P.EQ) e1 e2) k env = evalK e1
-  (\e1' env' -> evalK e2 (k . truthy P.EQ e1') env') env
+  (\e1' env' -> evalK e2 (k . equality P.EQ e1') env') env
 
 evalK (BOp (Cmp P.NEQ) e1 e2) k env = evalK e1
-  (\e1' env' -> evalK e2 (k . truthy P.NEQ e1') env') env
+  (\e1' env' -> evalK e2 (k . equality P.NEQ e1') env') env
 
 evalK (BOp And e1 e2) k env = evalK e1
   (\e1' env' -> if not . literalTruth $ e1'
@@ -121,10 +123,10 @@ notTruthy = \case
   (Lit Nil) -> Lit $ BoolLit True            --Nil is falsy
   _ -> Lit $ BoolLit False                   --Everything else is truthy
 
-truthy :: ComparrisonOp -> Expr -> Expr -> Expr
-truthy operator e1 e2 = case operator of
-                          P.EQ -> Lit $ BoolLit $ literalTruth e1 == literalTruth e2
-                          NEQ -> Lit $ BoolLit $ literalTruth e1 /= literalTruth e2
+equality :: ComparrisonOp -> Expr -> Expr -> Expr
+equality operator e1 e2 = case operator of
+                          P.EQ -> Lit $ BoolLit $ e1 == e2
+                          NEQ -> Lit $ BoolLit $ e1 /= e2
 
 interpretK :: Program -> (Store -> IO Store) -> (Store -> IO Store)
 --interpretK p k | trace ("DEBUG INTERPRETK " <> show p <> "\n") False = undefined
@@ -172,6 +174,12 @@ interpretK ((ReturnStatement (Just e)): _) _ = evalK e (\e' env' ->
   case fnReturnK env' of
     Nothing -> noCallerContFail
     (Just (fk, callerEnv)) -> fk e' callerEnv)
+
+
+baseGlobalEnv :: Environment
+baseGlobalEnv = Environment (Env baseScope EmptyEnv) Nothing
+  where baseScope = M.fromList [clock]
+        clock = ("clock", NativeFunc Clock [])
 
 
 emptyEnvironment = Environment EmptyEnv Nothing

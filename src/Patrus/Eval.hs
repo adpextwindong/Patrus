@@ -64,7 +64,7 @@ eval (UOp Negate e) = do
     e' <- eval e
     case e' of
         (Lit (NumberLit x)) -> pure $ Lit $ NumberLit (-x)
-        _ -> fail uopTyMismatch
+        other -> pure $ Lit $ BoolLit $ not . literalTruth $ other
 
 --Dispatch to truthy evals
 eval (UOp Not e) = evalNotTruthy e

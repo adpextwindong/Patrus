@@ -381,4 +381,8 @@ class Brunch < Breakfast {
 
 We'll have a built-in print statement and eventually a clock function for benchmarking.
 
- 
+### 10.2.1 - Function Variable Namespaces
+
+"Lox is a Lisp-1"
+
+Functions and Variables sahre the same namespace.

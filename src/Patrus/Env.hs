@@ -1,5 +1,14 @@
 {-# LANGUAGE DoAndIfThenElse #-}
-module Patrus.Env where
+module Patrus.Env
+    (insertEnvironment
+    ,adjustEnvironmentFM
+    ,pushFuncEnvironment
+    ,popFuncEnvironment
+    ,withFuncEnvironment
+    ,modifyEnvironment
+    ,lookupEnv --TODO refactor?
+    )
+    where
 
 import qualified Data.Map.Strict as M
 import Control.Monad.State.Class (MonadState (..))
@@ -44,9 +53,15 @@ lookupEnv i (Env scope parent) = case M.lookup i scope of
 pushFreshEnv :: Env -> Env
 pushFreshEnv parentEnv = Env M.empty parentEnv
 
+pushFreshEnvironment :: Environment -> Environment
+pushFreshEnvironment e@(Environment env global rk) = Environment (pushFreshEnv env) global rk
+
 popEnv :: Env -> Env
 popEnv (Env _ p) = p
 popEnv EmptyEnv = EmptyEnv
+
+-- popFuncEnvironment :: Environment -> Environment
+-- popFuncEnvironment e@(Environment env global rk) = Environment (popEnv env) global rk
 
 popFuncEnvironment :: Environment -> Environment
 popFuncEnvironment (Environment (Env _ p) global rk) = Environment p global rk
@@ -54,9 +69,9 @@ popFuncEnvironment (Environment EmptyEnv global rk) = Environment EmptyEnv globa
 
 withFreshEnv :: EvalM a -> EvalM a
 withFreshEnv f = do
-    modifyEnv $ pushFreshEnv
+    modifyEnvironment pushFreshEnvironment
     e <- f
-    modifyEnv popEnv
+    modifyEnvironment popFuncEnvironment
     return e
 
 pushFuncEnv :: [(Identifier, Expr)] -> Env -> Env
@@ -65,17 +80,17 @@ pushFuncEnv bindings env = Env (M.fromList bindings) env
 pushFuncEnvironment :: [(Identifier , Expr)] -> Environment -> Environment
 pushFuncEnvironment bindings (Environment env global rk) = Environment (pushFuncEnv bindings env) global rk
 
-withFuncEnv :: [(Identifier, Expr)] -> EvalM a -> EvalM a
-withFuncEnv bindings f = do
-    modifyEnv $ pushFuncEnv bindings
+withFuncEnvironment :: [(Identifier, Expr)] -> EvalM a -> EvalM a
+withFuncEnvironment bindings f = do
+    modifyEnvironment $ pushFuncEnvironment bindings
     e <- f
-    modifyEnv popEnv
+    modifyEnvironment popFuncEnvironment
     return e
 
 --TODO fix for global after next chapter
 --I split the Environment into a lexical scope and another for globals (which should always be 1 lexical scope).
 --I need to double check if modifyEnv respects that
-modifyEnv :: (Env -> Env) -> EvalM ()
-modifyEnv f = do
-    environ@(Environment env global k) <- get
-    put (Environment (f env) global k)
+modifyEnvironment :: (Environment -> Environment) -> EvalM ()
+modifyEnvironment f = do
+    env  <- get
+    put (f env)

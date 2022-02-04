@@ -12,6 +12,7 @@ import Control.Monad.State.Class (MonadState (..))
 import Patrus.Env
 import Patrus.Types
 import Patrus.Eval.Pure (evalBop, sameLitType, literalTruth)
+import Patrus.Env (insertEnvironment, withFuncEnvironment)
 
 uopTyMismatch = "Operand must be a number."
 bopTyMismatch = "Operands must be numbers."
@@ -57,7 +58,8 @@ eval (Call callee args) = do
             callTyCheck callee'
             arityCheck params args'
             let bindings = zip params args'
-            retVal <- withFuncEnv bindings $ interpretM [body]
+            --TODO ExceptT
+            retVal <- withFuncEnvironment bindings $ interpretM [body]
 
             case retVal of
                 Unit -> return $ Lit Nil
@@ -166,15 +168,15 @@ interpretM ((ExprStatement e) : xs) = do
     interpretM xs
 
 interpretM ((VarDeclaration i Nothing) : xs) = do
-    modifyEnv $ insertEnv i (Lit Nil)
+    modifyEnvironment $ insertEnvironment i (Lit Nil)
     interpretM xs
 
 interpretM (VarDeclaration i (Just e) : xs) = do
     e' <- eval e
-    modifyEnv (insertEnv i e')
+    modifyEnvironment (insertEnvironment i e')
     interpretM xs
 
-interpretM ((BlockStatement bs):xs) = withFuncEnv [] (interpretM bs)
+interpretM ((BlockStatement bs):xs) = withFuncEnvironment [] (interpretM bs)
 
 --1/7/22 TODO this is begging us to have an interpretBlock function
 interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
@@ -206,5 +208,5 @@ interpretM ((ReturnStatement (Just e)): xs) = eval e
 interpretM ((FunStatement name args body) : xs) = do
     (Environment closure _ _) <- get
     let e = Func (Function args body) closure
-    modifyEnv (insertEnv name e)
+    modifyEnvironment (insertEnvironment name e)
     interpretM xs

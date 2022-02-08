@@ -13,7 +13,7 @@ import Control.Monad.State.Class (MonadState (..))
 
 import Patrus.Env
 import Patrus.Types
-import Patrus.Eval.Pure (evalBop, sameLitType, literalTruth)
+import Patrus.Eval.Pure (evalBop, sameLitType, literalTruth, equality, notTruthy)
 import Patrus.Env (insertEnvironment, withFuncEnvironment)
 
 uopTyMismatch = "Operand must be a number."
@@ -68,6 +68,7 @@ eval (Call callee args) = do
               (\case
                 (ReturnException e) -> put oldEnv >> return e
                 err -> throwError err)
+        _ -> fail $ "Type Error: can't call a non function"
 
 eval (Group e) = eval e
 eval (UOp Negate e) = do
@@ -77,9 +78,17 @@ eval (UOp Negate e) = do
         other -> pure $ Lit $ BoolLit $ not . literalTruth $ other
 
 --Dispatch to truthy evals
-eval (UOp Not e) = evalNotTruthy e
-eval (BOp (Cmp EQ) e1 e2) = evalTruthy EQ e1 e2
-eval (BOp (Cmp NEQ) e1 e2) = evalTruthy NEQ e1 e2
+eval (UOp Not e) = eval e >>= (return . notTruthy)
+eval (BOp (Cmp EQ) e1 e2) = do
+  e1' <- eval e1
+  e2' <- eval e2
+  return $ equality EQ e1' e2'
+
+eval (BOp (Cmp NEQ) e1 e2) = do
+  e1' <- eval e1
+  e2' <- eval e2
+  return $ equality NEQ e1' e2'
+
 eval (BOp And e1 e2) = evalTruthyShortCircuit And e1 e2
 eval (BOp Or e1 e2) = evalTruthyShortCircuit Or e1 e2
 
@@ -117,38 +126,19 @@ arityCheck params args = if length params == length args
                          then return ()
                          else fail $ "Expected " <> show (length params) <> " arguments but got " <> show (length args) <> "."
 
-evalTruthy :: ComparrisonOp -> Expr -> Expr -> EvalM Expr
-evalTruthy operator e1 e2 = do
-   e1 <- eval e1
-   e2 <- eval e2
-   return $ case operator of
-        EQ -> Lit $ BoolLit $ e1 == e2
-        NEQ -> Lit $ BoolLit $ e1 /= e2
-
-evalNotTruthy :: Expr -> EvalM Expr
-evalNotTruthy e = do
-    e' <- eval e
-    return $ case e' of
-        (Lit (BoolLit b)) -> Lit $ BoolLit (not b)    --Bools are bools
-        (Lit Nil) -> Lit $ BoolLit True               --Nil is falsy
-        e -> Lit $ BoolLit False                      --Every else is truthy
 
 evalTruthyShortCircuit :: BinOp -> Expr -> Expr -> EvalM Expr
 evalTruthyShortCircuit And e1 e2 = do
     e1' <- eval e1
     if not . literalTruth $ e1'
     then return e1'
-    else do
-        e2' <- eval e2
-        return e2'
+    else eval e2
 
 evalTruthyShortCircuit Or e1 e2 = do
     e1' <- eval e1
     if literalTruth e1'
     then return e1'
-    else do
-        e2' <- eval e2
-        return e2'
+    else eval e2
 
 interpretM :: Program -> EvalM Expr
 --interpretM ps | trace ("\nTRICK " <> show ps) False = undefined
@@ -159,7 +149,7 @@ interpretM ((PrintStatement e): xs) = do
     liftIO $ print $ "PRINT: " <> show e'
     interpretM xs
 
-interpretM ((DumpStatement) : xs) = do
+interpretM (DumpStatement : xs) = do
     env <- get
     liftIO $ print $ "DUMP: " <> show env
     interpretM xs

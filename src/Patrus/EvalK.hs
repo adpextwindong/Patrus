@@ -116,18 +116,6 @@ arityCheck params args = if length params == length args
                          then return ()
                          else fail $ "Expected " <> show (length params) <> " arguments but got " <> show (length args) <> "."
 
---Boolean not in the Truthyness of Lox
-notTruthy :: Expr -> Expr
-notTruthy = \case
-  (Lit (BoolLit b)) -> Lit $ BoolLit (not b) --Bools are bools
-  (Lit Nil) -> Lit $ BoolLit True            --Nil is falsy
-  _ -> Lit $ BoolLit False                   --Everything else is truthy
-
-equality :: ComparrisonOp -> Expr -> Expr -> Expr
-equality operator e1 e2 = case operator of
-                          P.EQ -> Lit $ BoolLit $ e1 == e2
-                          NEQ -> Lit $ BoolLit $ e1 /= e2
-
 interpretK :: Program -> (Store -> IO Store) -> (Store -> IO Store)
 --interpretK p k | trace ("DEBUG INTERPRETK " <> show p <> "\n") False = undefined
 interpretK [] k = k

@@ -61,12 +61,19 @@ eval (Call callee args) = do
             callTyCheck callee'
             arityCheck params args'
             let bindings = zip params args'
-            --TODO ExceptT
+            --Stash callee environment for restoring
             oldEnv <- get
+            --Setup closure environment
+            put $ Environment closure (global oldEnv) Nothing
             do { withFuncEnvironment bindings $ interpretM [body] }
               `catchError`
               (\case
-                (ReturnException e) -> put oldEnv >> return e
+                (ReturnException e) -> do
+                    (Environment _ globals' _) <- get
+                    --Thread through modified global variables to the original callee
+                    --restore callee environment
+                    put $ setGlobal oldEnv globals'
+                    return e
                 err -> throwError err)
         _ -> fail $ "Type Error: can't call a non function"
 

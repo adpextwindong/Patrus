@@ -156,11 +156,13 @@ interpretK w@((WhileStatement conde body): xs) k = evalK conde (\conde' ->
 interpretK (ReturnStatement Nothing: _) _ = \env ->
   case fnReturnK env of
     Nothing -> noCallerContFail
+    --TODO thread through Global pass through to caller env
     (Just (fk, callerEnv)) -> fk (Lit Nil) callerEnv
 
 interpretK ((ReturnStatement (Just e)): _) _ = evalK e (\e' env' ->
   case fnReturnK env' of
     Nothing -> noCallerContFail
+    --TODO thread through Global pass through to caller env
     (Just (fk, callerEnv)) -> fk e' callerEnv)
 
 

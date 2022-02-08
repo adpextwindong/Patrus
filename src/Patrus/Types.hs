@@ -81,6 +81,9 @@ data Environment = Environment {
                       --Maybe tag this with source location for printing
                    }
 
+setGlobal :: Environment -> Env -> Environment
+setGlobal (Environment e _ fk) global = Environment e global fk
+
 instance Show Environment where
   show (Environment env global Nothing) = "Environment " <> show env <> " Global "<> show global <> " no returnK"
   show (Environment env global (Just xs)) = "Environment " <> show env <> " Global" <> show global <> " has returnK"

@@ -1,4 +1,5 @@
 {-# LANGUAGE DoAndIfThenElse #-}
+{-# LANGUAGE LambdaCase #-}
 module Patrus.Eval where
 
 import Debug.Trace
@@ -6,6 +7,7 @@ import GHC.Float
 import Prelude hiding (EQ,LT,GT)
 import Data.Time.Clock
 
+import Control.Monad.Except
 import Control.Monad.IO.Class
 import Control.Monad.State.Class (MonadState (..))
 
@@ -60,11 +62,12 @@ eval (Call callee args) = do
             arityCheck params args'
             let bindings = zip params args'
             --TODO ExceptT
-            retVal <- withFuncEnvironment bindings $ interpretM [body]
-
-            case retVal of
-                Unit -> return $ Lit Nil
-                _ -> return retVal
+            oldEnv <- get
+            do { withFuncEnvironment bindings $ interpretM [body] }
+              `catchError`
+              (\case
+                (ReturnException e) -> put oldEnv >> return e
+                err -> throwError err)
 
 eval (Group e) = eval e
 eval (UOp Negate e) = do
@@ -88,7 +91,6 @@ eval (BOp operator e1 e2) = do
 
 eval e@(Func _ _) = undefined --TODO
 eval Class = undefined --TODO
-eval Unit = undefined --TODO Remove
 
 -- | Performs strict type matching for PLUS/MINUS/DIV/MUL/LT/LTE/GT/GTE
 -- Nil in any operand causes an error, EQ and NEQ should be handled earlier.
@@ -120,8 +122,8 @@ evalTruthy operator e1 e2 = do
    e1 <- eval e1
    e2 <- eval e2
    return $ case operator of
-        EQ -> Lit $ BoolLit $ literalTruth e1 == literalTruth e2
-        NEQ -> Lit $ BoolLit $ literalTruth e1 /= literalTruth e2
+        EQ -> Lit $ BoolLit $ e1 == e2
+        NEQ -> Lit $ BoolLit $ e1 /= e2
 
 evalNotTruthy :: Expr -> EvalM Expr
 evalNotTruthy e = do
@@ -151,9 +153,7 @@ evalTruthyShortCircuit Or e1 e2 = do
 interpretM :: Program -> EvalM Expr
 --interpretM ps | trace ("\nTRICK " <> show ps) False = undefined
 
---Unit is currently a signal to any Block interpretter that a return value has happened.
---This approach as it is currently does not feel correct.
-interpretM [] = return Unit
+interpretM [] = throwError EndOfBlock
 interpretM ((PrintStatement e): xs) = do
     e' <- eval e
     liftIO $ print $ "PRINT: " <> show e'
@@ -177,7 +177,8 @@ interpretM (VarDeclaration i (Just e) : xs) = do
     modifyEnvironment (insertEnvironment i e')
     interpretM xs
 
-interpretM ((BlockStatement bs):xs) = withFuncEnvironment [] (interpretM bs)
+--TODO This might need to catch errors, see Loxomotive
+interpretM ((BlockStatement bs):xs) = withFuncEnvironment [] (interpretM bs) `catchError` (\e -> throwError e)
 
 --1/7/22 TODO this is begging us to have an interpretBlock function
 interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
@@ -189,10 +190,7 @@ interpretM ((IfStatement conde trueBranch falseBranch): xs) = do
                     Just fb -> interpretM [fb]
                     Nothing -> interpretM []
 
-    case blockVal of
-        Unit -> interpretM xs
-        _ -> return blockVal --ife branches returned something so we must return it
-
+    interpretM xs
     --TODO refactor EvalM to handle this better
 
 interpretM w@((WhileStatement conde body):xs) = do
@@ -203,8 +201,8 @@ interpretM w@((WhileStatement conde body):xs) = do
     then interpretM [body] >> interpretM w
     else interpretM xs
 
-interpretM ((ReturnStatement Nothing): xs) = return $ Lit Nil
-interpretM ((ReturnStatement (Just e)): xs) = eval e
+interpretM ((ReturnStatement Nothing): xs) = throwError $ ReturnException $ Lit Nil
+interpretM ((ReturnStatement (Just e)): xs) = eval e >>= (\e -> throwError (ReturnException e))
 
 interpretM ((FunStatement name args body) : xs) = do
     (Environment closure _ _) <- get

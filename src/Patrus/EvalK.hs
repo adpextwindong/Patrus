@@ -101,8 +101,6 @@ evalK (Call callee args) k environment = evalK callee (\callee' env' ->
 evalK (Func _ _) _ _ = undefined --TODO
 evalK Class _ _ = undefined --TODO
 
-evalK Unit _ _ = undefined --TODO remove unit from the base expr
-
 --evalK _ _ _ = undefined
 
 mapEvalK :: [Expr] -> ([Expr] -> Store -> IO Store) -> Store -> IO Store

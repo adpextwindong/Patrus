@@ -53,7 +53,6 @@ data Expr = BOp BinOp Expr Expr
                ,callparameters :: [Identifier]
           }
           | Class --TODO
-          | Unit --TODO remove after we figure out return statements
             deriving (Show, Eq)
 
 data Function = Function {
@@ -88,6 +87,7 @@ instance Show Environment where
 
 data EvalException = ReturnException Expr
                    | EvalPanic String --Error String
+                   | EndOfBlock
                    deriving (Show, Eq)
 
 --like Intrigue's EvalM but with StateT
@@ -98,6 +98,7 @@ newtype EvalM a = EvalM { runEval :: ExceptT EvalException (StateT Environment I
                    , MonadState Environment
                    , MonadFail --Evaluation can fail due to type mismatches (or soon undeclared identifiers)
                    , MonadIO
+                   , MonadError EvalException
                    )
 
 desugarFor :: Maybe Statement -> Maybe Expr -> Maybe Expr -> Statement -> Statement

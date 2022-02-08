@@ -14,4 +14,4 @@ spec = do
         it "successfully computes the fibonnaci sequence" $ do
             r <- runProgram (parseProgram "fun fib(n){ if(n<=1) return n;  else  return fib(n-2) + fib(n-1); } return fib(20);") :: IO (Either EvalException Expr, Environment)
 
-            fst r `shouldBe` (Right (Lit (NumberLit 6765.0)))
+            fst r `shouldBe` (Left (ReturnException (Lit (NumberLit 6765.0))))

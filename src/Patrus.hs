@@ -16,8 +16,6 @@ import Patrus.Env
 import Patrus.Interpret
 import Patrus.Eval
 
-ip :: String -> IO Environment
 ip = interpretProgram . parseProgram
 
-runPF :: FilePath -> IO Environment
 runPF fp = ip =<< readFile fp

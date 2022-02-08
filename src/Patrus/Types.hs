@@ -2,6 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-} --EvalM
 module Patrus.Types where
 
+import Control.Monad.Except
 import Control.Monad.IO.Class
 import Control.Monad.State.Class (MonadState (..))
 import Control.Monad.Trans.State (StateT, runStateT, evalStateT, execStateT, modify')
@@ -85,8 +86,12 @@ instance Show Environment where
   show (Environment env global Nothing) = "Environment " <> show env <> " Global "<> show global <> " no returnK"
   show (Environment env global (Just xs)) = "Environment " <> show env <> " Global" <> show global <> " has returnK"
 
+data EvalException = ReturnException Expr
+                   | EvalPanic String --Error String
+                   deriving (Show, Eq)
+
 --like Intrigue's EvalM but with StateT
-newtype EvalM a = EvalM { runEval :: StateT Environment IO a }
+newtype EvalM a = EvalM { runEval :: ExceptT EvalException (StateT Environment IO) a }
   deriving newtype ( Functor
                    , Applicative
                    , Monad

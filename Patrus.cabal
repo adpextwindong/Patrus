@@ -60,6 +60,9 @@ test-suite patrus-test
     main-is: Spec.hs
     other-modules:
         Patrus.ParserSpec
+        Patrus.EvaluationSpec
+        Patrus.FunctionSpec
+        Patrus.BindingSpec
         Paths_Patrus
     hs-source-dirs:
         test
@@ -70,5 +73,7 @@ test-suite patrus-test
        ,containers
        ,hspec
        ,hspec-discover
+       ,string-qq
+       ,silently
        ,Patrus
     default-language: Haskell2010

@@ -14,6 +14,7 @@ import Control.Monad.State.Class (MonadState (..))
 import Patrus.Env
 import Patrus.Types
 import Patrus.Eval.Pure (evalBop, sameLitType, literalTruth, equality, notTruthy)
+import Patrus.Eval.PrettyPrinter (prettyPrintAST)
 import Patrus.Env (insertEnvironment, withFuncEnvironment)
 
 uopTyMismatch = "Operand must be a number."
@@ -153,7 +154,7 @@ interpretM :: Program -> EvalM Expr
 interpretM [] = throwError EndOfBlock
 interpretM ((PrintStatement e): xs) = do
     e' <- eval e
-    liftIO $ print $ "PRINT: " <> show e'
+    liftIO $ putStrLn $ prettyPrintAST e'
     interpretM xs
 
 interpretM (DumpStatement : xs) = do

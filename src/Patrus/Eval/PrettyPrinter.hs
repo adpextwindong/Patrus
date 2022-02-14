@@ -17,7 +17,7 @@ prettyPrintAST (Lit v)          = prettyPrintLit v
 
 prettyPrintLit :: Literal -> String
 prettyPrintLit (NumberLit v)    = formatFloat v
-prettyPrintLit (StringLit s)    = show s
+prettyPrintLit (StringLit s)    = s
 prettyPrintLit (BoolLit b)      = show b
 prettyPrintLit (Nil)            = "nil"
 

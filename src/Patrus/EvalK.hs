@@ -9,6 +9,7 @@ import Patrus.Env
 import Patrus.Types as P
 import Patrus.Eval.Pure
 import Patrus.Parser
+import Patrus.Eval.PrettyPrinter (prettyPrintAST)
 
 uopTyMismatch = "Operand must be a number."
 bopTyMismatch = "Operands must be numbers."
@@ -121,7 +122,7 @@ interpretK :: Program -> (Store -> IO Store) -> (Store -> IO Store)
 interpretK [] k = k
 
 interpretK ((PrintStatement e) : xs) k = evalK e (\e' env' -> do
-  print ("PRINT: " <> show e')
+  putStrLn $ prettyPrintAST e'
   interpretK xs k env')
 
 interpretK (DumpStatement : xs) k = \env -> putStr ("DUMP: " <> show env <> "\n") >> interpretK xs k env
@@ -206,3 +207,6 @@ ifetest = interpretK ifeProg return emptyEnvironment
 
 fibtest = interpretK fib return emptyEnvironment
 fib = parseProgram "fun fib(n) { if (n <= 1) { return n; } else { return fib(n-2) + fib(n-1); } } print fib(20);"
+
+bindingTest = interpretK bindingProg return emptyEnvironment
+bindingProg = parseProgram "var a = \"g\"; { fun sA(){ print a; return;} sA(); var a = \"l\"; sA();}"

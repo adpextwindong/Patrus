@@ -93,6 +93,7 @@ Declaration : FunDecl                   { $1 }
 FunDecl :: { Statement }
 FunDecl : FUN Function                  { $2 }
 
+--TODO add implicit return.
 Function :: { Statement }
 Function : TIdentifier LEFT_PAREN RIGHT_PAREN Block { FunStatement (tis $1) [] $4 }
          |  TIdentifier LEFT_PAREN FunctionParams RIGHT_PAREN Block { FunStatement (tis $1) $3 $5 }
@@ -211,7 +212,7 @@ Arguments : Expr COMMA Arguments { $1 : $3 }
           | Expr { [$1] }
 
 Primary :: { Expr }
-Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit (StringLit s)) $1 }
+Primary : TStringLiteral                        { (\(TStringLiteral s _) -> Lit (StringLit (init (tail (s))))) $1 }
         | TNumberLiteral                        { (\(TNumberLiteral s _) -> Lit (NumberLit (read s))) $1 }
         | TRUE                                  { Lit (BoolLit True) }
         | FALSE                                 { Lit (BoolLit False) }

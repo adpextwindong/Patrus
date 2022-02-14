@@ -1437,3 +1437,32 @@ ip "fun fib(n) { if (n <= 1) return n; else { return fib(n - 2) + fib(n - 1); } 
 
 "PRINT: Lit (NumberLit 6765.0)"
 ```
+
+## CPS Interpreter
+
+I've taken a break from doing incremental updates to add another impl.
+
+I've added a continuation passing style interpretter (after having finished [Stra74](https://github.com/adpextwindong/Stra74/).
+
+## Notes on Lox's limintations
+
+Mutual recursion like this is not possible. (You can get around it by passing bar as an argument to foo.)
+
+```lox
+{
+
+  fun foo(n){
+    return bar(n+2);
+  }
+
+  fun bar(n){
+    if(n > 5){
+      return n;
+    }else{
+      return foo(n+1);
+    }
+  }
+
+  print bar(2);
+}
+```

@@ -154,16 +154,16 @@ interpretK w@((WhileStatement conde body): xs) k = evalK conde (\conde' ->
 
 --TODO test funcalls and nested funcalls
 interpretK (ReturnStatement Nothing: _) _ = \env ->
+  let (Environment _ global _) = env in
   case fnReturnK env of
     Nothing -> noCallerContFail
-    --TODO thread through Global pass through to caller env
-    (Just (fk, callerEnv)) -> fk (Lit Nil) callerEnv
+    (Just (fk, callerEnv)) -> fk (Lit Nil) (setGlobal callerEnv global)
 
 interpretK ((ReturnStatement (Just e)): _) _ = evalK e (\e' env' ->
+  let (Environment _ global _) = env' in
   case fnReturnK env' of
     Nothing -> noCallerContFail
-    --TODO thread through Global pass through to caller env
-    (Just (fk, callerEnv)) -> fk e' callerEnv)
+    (Just (fk, callerEnv)) -> fk e' (setGlobal callerEnv global))
 
 
 baseGlobalEnv :: Env
@@ -174,12 +174,8 @@ baseGlobalEnv = Env baseScope EmptyEnv
 
 emptyEnvironment = Environment EmptyEnv baseGlobalEnv Nothing
 
---TODO fix this to include globals
 fnRetRestoreEnv :: Environment -> KM IO -> Env -> Environment
 fnRetRestoreEnv callerEnv@(Environment _ global _) k closure = Environment closure global (Just (k, callerEnv))
-
-replaceRetGlobal :: Environment -> Environment -> Environment
-replaceRetGlobal = undefined
 
 kTraceList :: [Expr] -> Store -> IO Store
 kTraceList xs = trace (show xs) return

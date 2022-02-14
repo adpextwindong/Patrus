@@ -56,7 +56,7 @@ eval (Call callee args) = do
     args' <- mapM eval args
     case callee' of
         e@(NativeFunc _ _ ) -> eval e         --Now that callee' is fully evaluated we can pattern match again
-        e@(Func name (Function params body) closure) -> do --TODO closures
+        e@(Func name (Function params body) closure) -> do
             callTyCheck callee'
             arityCheck params args'
             let bindings = (name, e) : zip params args' --Allow for recursion but bind before params
@@ -174,7 +174,6 @@ interpretM (VarDeclaration i (Just e) : xs) = do
     modifyEnvironment (insertEnvironment i e')
     interpretM xs
 
---TODO This might need to catch errors, see Loxomotive
 interpretM ((BlockStatement bs):xs) = do
     withFuncEnvironment [] (interpretM bs) `catchError` (\case
       EndOfBlock -> interpretM xs

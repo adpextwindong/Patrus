@@ -51,3 +51,27 @@ spec = do
             (captured, result) <- capture $ runProgram prog
 
             captured `shouldBe` expected
+        it "globalMutation" $ do
+            let prog = parseProgram [s|
+              var x = 0;
+              print x;
+
+              {
+                {
+                  //local x to 1
+                  var x = 1;
+                  print x;
+                }
+
+                //mutate global x to 2
+                x = 2;
+                print x;
+
+              }
+              print x;
+
+            |]
+
+            let expected = "0\n1\n2\n2\n"
+            (captured, result) <- capture $ runProgram prog
+            captured `shouldBe` expected

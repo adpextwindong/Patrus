@@ -25,22 +25,23 @@ insertEnvironment i e (Environment EmptyEnv global rk) = Environment EmptyEnv (i
 insertEnvironment i e (Environment env global rk) = Environment (insertEnv i e env) global rk
 
 -- | Adjusts an existing binding or fails if it does not exist in the lexical scopes.
-adjustEnvFM :: (MonadFail m) => Identifier -> Expr -> Env -> m Env
-adjustEnvFM i _ EmptyEnv = fail $ "Undefined variable \'" <> i <> "\'."
-adjustEnvFM i e (Env scope p) = do
+adjustEnvFM :: (MonadFail m) => Identifier -> Expr -> Env -> Env -> m Env
+adjustEnvFM i _ EmptyEnv EmptyEnv = fail $ "Undefined variable \'" <> i <> "\'."
+adjustEnvFM i e EmptyEnv fallback = adjustEnvFM i e fallback EmptyEnv
+adjustEnvFM i e (Env scope p) fallback = do
     if M.member i scope
     then return (Env (M.insert i e scope) p)
     else do
-        p' <- adjustEnvFM i e p
+        p' <- adjustEnvFM i e p fallback
         return $ Env scope p'
 
 adjustEnvironmentFM :: (MonadFail m) => Identifier -> Expr -> Environment -> m Environment
 adjustEnvironmentFM i e (Environment EmptyEnv global k) = do
-    global' <- adjustEnvFM i e global
+    global' <- adjustEnvFM i e global EmptyEnv
     return (Environment EmptyEnv global k)
 
 adjustEnvironmentFM i e (Environment env global k) = do
-    env' <- adjustEnvFM i e env
+    env' <- adjustEnvFM i e env global
     return (Environment env' global k)
 
 -- | Recursively looks up the identifier in each map

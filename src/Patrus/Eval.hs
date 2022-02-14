@@ -30,7 +30,6 @@ runtimeVarError identifier = "Undefined variable '" <> identifier <> "'."
 eval :: Expr -> EvalM Expr
 eval e@(Lit _) = return e
 
--- TODO test global handling
 eval (Var i) = do
     (Environment env global _) <- get
     case lookupEnv i env of
@@ -39,7 +38,6 @@ eval (Var i) = do
                      Just v -> return v
         Just v -> return v
 
---TODO this needs to be global aware
 eval (Assignment i e) = do
    e' <- eval e
    put =<< adjustEnvironmentFM i e' =<< get
@@ -152,6 +150,7 @@ interpretM :: Program -> EvalM Expr
 --interpretM ps | trace ("\nTRICK " <> show ps) False = undefined
 
 interpretM [] = throwError EndOfBlock
+
 interpretM ((PrintStatement e): xs) = do
     e' <- eval e
     liftIO $ putStrLn $ prettyPrintAST e'
@@ -176,7 +175,10 @@ interpretM (VarDeclaration i (Just e) : xs) = do
     interpretM xs
 
 --TODO This might need to catch errors, see Loxomotive
-interpretM ((BlockStatement bs):xs) = withFuncEnvironment [] (interpretM bs) `catchError` (\e -> throwError e)
+interpretM ((BlockStatement bs):xs) = do
+    withFuncEnvironment [] (interpretM bs) `catchError` (\case
+      EndOfBlock -> interpretM xs
+      e -> throwError e)
 
 --1/7/22 TODO this is begging us to have an interpretBlock function
 interpretM ((IfStatement conde trueBranch falseBranch): xs) = do

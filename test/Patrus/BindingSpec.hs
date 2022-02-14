@@ -31,3 +31,23 @@ spec = do
             (captured, result) <- capture $ runProgram prog
 
             captured `shouldBe` expected
+        it "recursion" $ do
+            let prog = parseProgram [s|
+
+            //not globals
+            {
+              //function parameters can locally overwrite function name bindings
+              fun foo(foo){
+                print foo;
+              }
+
+              foo(5);
+              foo(foo);
+            }
+
+            |]
+
+            let expected = "5\n<fn foo>\n"
+            (captured, result) <- capture $ runProgram prog
+
+            captured `shouldBe` expected

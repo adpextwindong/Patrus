@@ -89,11 +89,10 @@ evalK (Call callee args) k environment = evalK callee (\callee' env' ->
   mapEvalK args (\args' env'' ->
   case callee' of
     e@(NativeFunc _ _) -> evalK e k env''
-    (Func name (Function params body) closure) -> do
+    e@(Func name (Function params body) closure) -> do
                                                 callTyCheck callee'
                                                 arityCheck params args'
-                                                let bindings = zip params args'
-                                                --TODO add function name to Func so it can recurse on itself instead of globals
+                                                let bindings = (name, e) : zip params args'
                                                 let funcEnv = pushFuncEnvironment bindings (fnRetRestoreEnv env'' k closure)
                                                 interpretK [body] return funcEnv --Return isn't used
     _ -> fail "Type Error: can't call a non function"

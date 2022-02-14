@@ -95,8 +95,8 @@ FunDecl : FUN Function                  { $2 }
 
 --TODO add implicit return.
 Function :: { Statement }
-Function : TIdentifier LEFT_PAREN RIGHT_PAREN Block { FunStatement (tis $1) [] $4 }
-         |  TIdentifier LEFT_PAREN FunctionParams RIGHT_PAREN Block { FunStatement (tis $1) $3 $5 }
+Function : TIdentifier LEFT_PAREN RIGHT_PAREN FunctionBlock { FunStatement (tis $1) [] $4 }
+         |  TIdentifier LEFT_PAREN FunctionParams RIGHT_PAREN FunctionBlock { FunStatement (tis $1) $3 $5 }
 
 
 FunctionParams :: { [Identifier] }
@@ -147,6 +147,11 @@ SimpleStmt : ExprStatement  { $1 }
 ReturnStatement :: { Statement }
 ReturnStatement : RETURN SEMICOLON { ReturnStatement Nothing }
                 | RETURN Expr SEMICOLON { ReturnStatement (Just $2) }
+
+FunctionBlock : LEFT_BRACE Declarations RIGHT_BRACE { let fnBlock = case $2 of
+                                                                        ((ReturnStatement _) : _) -> $2
+                                                                        _ -> (ReturnStatement Nothing) : $2 in
+                                                      BlockStatement (reverse fnBlock) }
 
 Block : LEFT_BRACE Declarations RIGHT_BRACE { BlockStatement (reverse $2) }
 

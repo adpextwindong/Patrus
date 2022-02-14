@@ -209,4 +209,4 @@ fibtest = interpretK fib return emptyEnvironment
 fib = parseProgram "fun fib(n) { if (n <= 1) { return n; } else { return fib(n-2) + fib(n-1); } } print fib(20);"
 
 bindingTest = interpretK bindingProg return emptyEnvironment
-bindingProg = parseProgram "var a = \"g\"; { fun sA(){ print a; return;} sA(); var a = \"l\"; sA();}"
+bindingProg = parseProgram "var a = \"g\"; { fun sA(){ print a;} sA(); var a = \"l\"; sA();}"

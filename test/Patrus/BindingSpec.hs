@@ -20,7 +20,6 @@ spec = do
             {
               fun scopeA(){
                 print a;
-                return;
               }
 
               scopeA();

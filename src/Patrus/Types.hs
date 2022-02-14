@@ -40,15 +40,17 @@ data Literal = NumberLit Double
              | Nil
                 deriving (Show, Eq)
 
+type Name = String
+
 data Expr = BOp BinOp Expr Expr
           | UOp UnaryOp Expr
           | Lit Literal
           | Group Expr
           | Var Identifier
           | Assignment Identifier Expr
-          | Func Function Env
+          | Func Name Function Env
           | Call Expr [Expr]
-                    | NativeFunc {
+          | NativeFunc {
                 nativeFuncTag :: NativeTag
                ,callparameters :: [Identifier]
           }

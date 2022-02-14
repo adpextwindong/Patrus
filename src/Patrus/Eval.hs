@@ -58,7 +58,8 @@ eval (Call callee args) = do
     args' <- mapM eval args
     case callee' of
         e@(NativeFunc _ _ ) -> eval e         --Now that callee' is fully evaluated we can pattern match again
-        e@(Func (Function params body) closure) -> do --TODO closures
+        e@(Func name (Function params body) closure) -> do --TODO closures
+            --TODO envs, recursion, mutual recursion?
             callTyCheck callee'
             arityCheck params args'
             let bindings = zip params args'
@@ -106,7 +107,7 @@ eval (BOp operator e1 e2) = do
     (e1,e2) <- literalBopTyMatch operator e1 e2
     pure $ evalBop operator e1 e2
 
-eval e@(Func _ _) = undefined --TODO
+eval e@(Func _ _ _) = return e
 eval Class = undefined --TODO
 
 -- | Performs strict type matching for PLUS/MINUS/DIV/MUL/LT/LTE/GT/GTE
@@ -125,7 +126,7 @@ literalBopTyMatch operator e1 e2 = do
         pure (e1,e2)
 
 callTyCheck :: Expr -> EvalM Expr
-callTyCheck e@(Func _ _) = return e
+callTyCheck e@(Func _ _ _) = return e
 callTyCheck e@(Class) = return e
 callTyCheck e = fail $ "Can only call functions and classes."
 
@@ -204,6 +205,6 @@ interpretM ((ReturnStatement (Just e)): xs) = eval e >>= (\e -> throwError (Retu
 
 interpretM ((FunStatement name args body) : xs) = do
     (Environment closure _ _) <- get
-    let e = Func (Function args body) closure
+    let e = Func name (Function args body) closure
     modifyEnvironment (insertEnvironment name e)
     interpretM xs

@@ -5,6 +5,7 @@ import GHC.Float
 import Prelude as P
 
 import Patrus.Types as A
+import Debug.Trace (trace)
 
 wrapParens :: String -> String
 wrapParens s = "(" ++ s ++ ")"
@@ -14,6 +15,9 @@ prettyPrintAST (BOp op e1 e2)   = wrapParens $ prettyPrintBop op ++ " " ++ prett
 prettyPrintAST (UOp op e)       = wrapParens $ prettyPrintUop op ++ prettyPrintAST e
 prettyPrintAST (Group e)        = wrapParens $ "group " ++ prettyPrintAST e
 prettyPrintAST (Lit v)          = prettyPrintLit v
+prettyPrintAST (Func name _ _)  = "<fn " <> name <> ">"
+prettyPrintAST e = trace (show e) undefined
+--TODO
 
 prettyPrintLit :: Literal -> String
 prettyPrintLit (NumberLit v)    = formatFloat v

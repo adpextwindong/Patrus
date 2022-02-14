@@ -89,7 +89,7 @@ evalK (Call callee args) k environment = evalK callee (\callee' env' ->
   mapEvalK args (\args' env'' ->
   case callee' of
     e@(NativeFunc _ _) -> evalK e k env''
-    (Func (Function params body) closure) -> do
+    (Func name (Function params body) closure) -> do
                                                 callTyCheck callee'
                                                 arityCheck params args'
                                                 let bindings = zip params args'
@@ -99,7 +99,7 @@ evalK (Call callee args) k environment = evalK callee (\callee' env' ->
     _ -> fail "Type Error: can't call a non function"
   )env' ) environment
 
-evalK (Func _ _) _ _ = undefined --TODO
+evalK e@(Func _ _ _) k env = k e env
 evalK Class _ _ = undefined --TODO
 
 --evalK _ _ _ = undefined
@@ -108,7 +108,7 @@ mapEvalK :: [Expr] -> ([Expr] -> Store -> IO Store) -> Store -> IO Store
 mapEvalK [] k = k []
 mapEvalK (e:es) k = evalK e (\e' -> mapEvalK es (k . (e' :)))
 
-callTyCheck (Func _ _) = return ()
+callTyCheck (Func _ _ _) = return ()
 callTyCheck Class = return ()
 callTyCheck _ = fail $ "Can only call functions and classes"
 
@@ -134,7 +134,7 @@ interpretK ((VarDeclaration i Nothing) : xs) k = \env -> interpretK xs k (insert
 interpretK (VarDeclaration i (Just e) : xs) k = evalK e (\e' env' -> interpretK xs k (insertEnvironment i e' env'))
 
 interpretK ((FunStatement name params body) : xs) k = \environ ->
-  let fn = Func (Function params body) (env environ) in
+  let fn = Func name (Function params body) (env environ) in
     interpretK xs k (insertEnvironment name fn environ)
 
 interpretK ((BlockStatement bs) : xs) k = \env -> interpretK bs (\env -> interpretK xs k (popFuncEnvironment env)) (pushFuncEnvironment [] env)
